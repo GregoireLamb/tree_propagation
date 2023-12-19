@@ -1,5 +1,7 @@
+import random
+
+import matplotlib.pyplot as plt
 import pandas as pd
-import folium
 
 from src.config import Config
 from src.utils import *
@@ -9,6 +11,7 @@ from src.population import *
 def main():
     print("\t-- Loading config...\n")
     config = Config()
+    random.seed(config.seed)
 
     # Data basic stat
     data = import_data(config)
@@ -17,14 +20,17 @@ def main():
     # Create population
     population = Population()
     population.populate(data)
+    create_tree_map(population)
     print(population)
 
     print("\n\t-- Simulation ready.")
 
-    # Visualisation
+    run_simulation(population, config)
+    print(population)
 
-    plot_tree_population(population)
-
+    create_tree_map(population)
+    population.plot_statistic()
+    # TODO save simulation results
 
 if __name__ == '__main__':
     main()

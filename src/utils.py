@@ -19,3 +19,9 @@ def make_trees(df):
                            tree[1]["ALTERab2023"]))
     return forest
 
+def run_simulation(population, config):
+    # TODO add a progress bar
+    for year in range(config.simulation_duration):
+        print(f"{year/config.simulation_duration*100:.2f}% done")
+        population.update()
+

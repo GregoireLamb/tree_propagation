@@ -16,7 +16,7 @@ def map_col2color(col):
 
     return assigned_colors, unique_values
 
-def plot_tree_population(pop):
+def create_tree_map(pop):
     # Set a larger figure size
     plt.figure(figsize=(10, 8))
 

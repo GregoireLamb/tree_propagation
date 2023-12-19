@@ -14,8 +14,10 @@ class Config:
         self.__config = self.load_config()
 
         # Execution
+        self.seed = self.__config["seed"]
         self.data_path = self.__config["data_path"]
         self.data_file = self.__config["data_file"]
+        self.simulation_duration = self.__config["simulation_duration"]
 
     def load_config(self):
         """
@@ -23,7 +25,6 @@ class Config:
         Returns:
             config (dict): Dictionary with config.yaml file
         """
-
         with open(self.config_path, 'r') as f:
             config = yaml.safe_load(f)
         return config
