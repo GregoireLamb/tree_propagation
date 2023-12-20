@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import geopandas as gpd
 
 def map_col2color(col):
     unique_values = sorted(list(set(col)))
@@ -30,6 +31,9 @@ def create_tree_map(pop):
         indices = [i for i, x in enumerate(col) if x == label]
         plt.scatter(x=[x[i] for i in indices], y=[y[i] for i in indices], color=color, alpha=0.75, label=label, linewidth=0, s=2)
 
+    # Add background (Vienna)
+    draw_background()
+
     # Adjust legend position and marker size
     plt.legend(loc='upper left', title="Group Labels", title_fontsize='12', markerscale=5)
 
@@ -37,3 +41,13 @@ def create_tree_map(pop):
     plt.suptitle("Tree Population", fontsize=20)
 
     plt.show()
+
+def draw_background(file_path='../data/export.geojson'):
+    gdf = gpd.read_file(file_path)
+    coordinates = gdf.geometry.unary_union.exterior.xy
+    plt.plot(coordinates[0], coordinates[1], linewidth=2, color='blue', label='Vienna')
+
+
+if __name__ == '__main__':
+    draw_background()
+    pass
