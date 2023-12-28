@@ -8,6 +8,7 @@ from src.utils import *
 from src.visualisation import *
 from src.population import *
 
+
 def main():
     print("\t-- Loading config...\n")
     config = Config()
@@ -20,17 +21,17 @@ def main():
     # Create population
     population = Population()
     population.populate(data)
-    create_tree_map(population)
+    visualize = Visualisation()
+    visualize.set_group_color_mapping(population._tree_groups)
     print(population)
 
     print("\n\t-- Simulation ready.")
 
-    run_simulation(population, config)
-    print(population)
+    run_simulation(population, config, visualize)
 
-    create_tree_map(population)
+    visualize.make_gif()
     population.plot_statistic()
-    # TODO save simulation results
+
 
 if __name__ == '__main__':
     main()

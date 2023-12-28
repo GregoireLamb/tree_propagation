@@ -2,3 +2,4 @@ data/*
 config.yaml
 .idea/*
 src/__pycache__/*
+results/*
