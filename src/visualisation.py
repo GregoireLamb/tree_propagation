@@ -86,10 +86,13 @@ class Visualisation:
     def make_gif(self, path='../results/', output_path='../results/gif/'):
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
+        images_name = []
         images = []
         for filename in os.listdir(path):
             if filename.endswith('.png'):
-                images.append(imageio.imread(path + filename))
+                images_name.append((filename, int(filename.split('_')[1].split('.')[0])))
+        for image_file, order in sorted(images_name, key=lambda x: x[1]):
+            images.append(imageio.imread(path + image_file))
         imageio.mimsave(output_path + 'simulation.gif', images, fps=2)
 
 if __name__ == '__main__':
