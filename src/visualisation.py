@@ -3,6 +3,7 @@ import warnings
 import matplotlib.pyplot as plt
 import geopandas as gpd
 import imageio.v2 as imageio
+from shapely.geometry import Polygon, MultiPolygon
 
 class Visualisation:
     def __init__(self):
@@ -24,7 +25,7 @@ class Visualisation:
         return assigned_colors
 
 
-    def create_tree_map(self, pop, save_path=None):
+    def create_tree_map(self, pop, year, save_path=None):
         warnings.filterwarnings('ignore', message='.*argument looks like a single numeric RGB*.', )
         plt.figure(figsize=(10, 8))
 
@@ -36,32 +37,51 @@ class Visualisation:
         plt.scatter(x=x, y=y, color=colors, alpha=0.75,  linewidth=0, s=2)
 
         # add custom legend
+        plt.fill([], [], c='lightblue', label='Danube')
         for group in self.group_color_mapping:
             if group in groups:
                 plt.scatter([], [], c=self.group_color_mapping[group], alpha=0.75, s=5, label=group)
 
-        # Add background (Vienna)
-        self.draw_background()
+        # Add background (Vienna and Danube)
+        self.draw_vienna()
+        self.draw_danube()
+
+        plt.xlim(16.08, 16.63)
+        plt.ylim(48.08, 48.38)
 
         # Adjust legend position and marker size
         plt.legend(loc='upper left', title="Group Labels", title_fontsize='12', markerscale=5)
 
         # Add a main title
-        plt.suptitle("Tree Population", fontsize=20)
+        plt.suptitle(f"Tree Population {year}", fontsize=20)
 
         if save_path is not None:
             plt.savefig(save_path)
         plt.show()
 
-    def draw_background(self, file_path='../data/export.geojson'):
+    def draw_vienna(self, file_path='../data/export.geojson'):
         gdf = gpd.read_file(file_path)
         coordinates = gdf.geometry.unary_union.exterior.xy
         plt.plot(coordinates[0], coordinates[1], linewidth=2, color='blue', label='Vienna')
 
+    def draw_danube(self, dir_path='../data/'):
+        for file in os.listdir(dir_path):
+            if file.startswith('danube'):
+                gdf = gpd.read_file(dir_path+file)
+                obj = gdf['geometry'][0]
+
+                if type(obj) == Polygon:
+                    x, y = obj.exterior.xy
+                    plt.fill(x, y, linewidth=2, color='lightblue')
+                elif type(obj) == MultiPolygon:
+                    for polygon in list(obj.geoms):
+                        x, y = polygon.exterior.xy
+                        plt.fill(x, y, linewidth=2, color='lightblue')
+
     def create_visualisation_step(self, pop, iteration, path='../results/'):
         if not os.path.isdir(path):
             os.mkdir(path)
-        self.create_tree_map(pop, save_path=path + f"step_{iteration}.png")
+        self.create_tree_map(pop, pop._starting_year+iteration, save_path=path + f"step_{iteration}.png")
 
     def make_gif(self, path='../results/', output_path='../results/gif/'):
         if not os.path.isdir(output_path):
@@ -75,11 +95,3 @@ class Visualisation:
 if __name__ == '__main__':
     vis = Visualisation()
     vis.make_gif()
-    """
-    rel in https://overpass-turbo.eu/
-    32484
-    18444
-    65901
-    75
-    30218
-    """
