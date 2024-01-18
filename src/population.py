@@ -2,6 +2,9 @@ import pandas as pd
 from src.tree import Tree
 from src.utils import *
 
+from src.tree import Tree
+
+
 class Population:
     def __init__(self):
         self._trees = []
@@ -9,13 +12,15 @@ class Population:
 
         self._tree_groups = None
         self._statistic = None
-        self._starting_year = 2023
+        self._starting_year = 2024
+        self._current_tree_id = 168880  # extract max id from initial df
+        # self._simulation_counter = 0    # keep track of simulation years to increment tree level
 
     def __repr__(self):
-        return (f"Population: "+
-                f"\n\t- Started in year {self._starting_year}"+
-                f"\n\t- {len(self._trees)} trees in total"+
-                f"\n\t- {len(self._trees) - len(self._trees_alive)} trees dead"+
+        return (f"Population: " +
+                f"\n\t- Started in year {self._starting_year}" +
+                f"\n\t- {len(self._trees)} trees in total" +
+                f"\n\t- {len(self._trees) - len(self._trees_alive)} trees dead" +
                 f"\n\n\t- Population statistic\n{self._statistic}")
 
     def plot_statistic(self):
@@ -33,15 +38,18 @@ class Population:
         plt.show()
 
     def populate(self, df):
-        self._trees = make_trees(df)
+        self._trees = create_trees(df)
         self._trees_alive = self._trees.copy()
-        self._tree_groups = list(set([tree._grouppe for tree in self._trees]))
+
+        print("Length Trees Alive:", len(self._trees_alive))
+
+        self._tree_groups = list(set([tree._species for tree in self._trees]))
 
         trees_per_group = {}
         for group in self._tree_groups:
             trees_per_group[group] = 0
         for tree in self._trees:
-            trees_per_group[tree._grouppe] += 1
+            trees_per_group[tree._species] += 1
 
         stat_columns = ['year', 'population_size'] + self._tree_groups
         self._statistic = pd.DataFrame(columns=stat_columns)
@@ -58,6 +66,7 @@ class Population:
 
     def remove_tree(self, tree):
         self._trees_alive.remove(tree)
+        #self._trees.remove(tree)
 
     def get_trees(self, id):
         return self._trees[id]
@@ -68,7 +77,7 @@ class Population:
         for group in self._tree_groups:
             trees_per_group[group] = 0
         for tree in self._trees_alive:
-            trees_per_group[tree._grouppe] += 1
+            trees_per_group[tree._species] += 1
 
         new_row = {'year': self._statistic.iloc[-1]['year'] + 1, 'population_size': len(self._trees_alive)}
         new_row.update(trees_per_group)
@@ -76,10 +85,38 @@ class Population:
         self._statistic.loc[len(self._statistic)] = new_row
         return trees_per_group
 
+    def update_forest(self, config):
 
-    def update(self):
         for tree in self._trees_alive:
-            if tree.update() == -1:
+
+            # Get position of new sapling tree
+            #  TODO: Use target lat/long as center for spread of new trees, not just one new tree
+            target_lat, target_long = tree.update(config)
+
+            if target_lat:
+                # Create new tree on new position
+                self._current_tree_id += 1
+
+                new_tree = Tree(self._current_tree_id,
+                                target_lat,
+                                target_long,
+                                tree._species,
+                                0,
+                                0,
+                                tree._spreading_factor)
+
+                # Add new tree to forest
+                self.add_tree(new_tree)
+
+                print(tree.id)
+                print(new_tree.id)
+
+
+            print(len(self._trees_alive))
+            print(tree._alive)
+
+            # Possibly remove old tree from forest
+            if not tree._alive:
                 self.remove_tree(tree)
 
         # TODO adapt group rules here

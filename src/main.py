@@ -3,6 +3,8 @@ import random
 # import matplotlib.pyplot as plt
 
 from src.config import Config
+from src.utils import import_data, observe_data, run_simulation
+from src.visualisation import *
 from src.population import *
 from src.visualisation import *
 
@@ -14,7 +16,7 @@ def main():
 
     # Data basic stat
     data = import_data(config)
-    observe_data(data)
+    #observe_data(data)
 
     # Create population
     population = Population()
