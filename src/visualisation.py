@@ -12,6 +12,7 @@ class Visualisation:
         with open(config.data_path + config.species_mapping_file, 'r', encoding='utf-8') as f:
             self.group_name_mapping = json.load(f)
         self.group_name_mapping_reversed = {v: k for k, v in self.group_name_mapping.items()}
+        self.bounding_box = config.bounding_box
 
     def set_group_color_mapping(self, col):
         unique_values = sorted(list(set(col)))
@@ -50,11 +51,11 @@ class Visualisation:
                 plt.scatter([], [], c=self.group_color_mapping[group], alpha=0.75, s=5, label=group)
 
         # Add background (Vienna and Danube)
-        self.draw_vienna()
         self.draw_danube()
+        self.draw_vienna()
 
-        plt.xlim(16.08, 16.63)
-        plt.ylim(48.08, 48.38)
+        plt.xlim(self.bounding_box[0][1],self.bounding_box[1][1])
+        plt.ylim(self.bounding_box[0][0],self.bounding_box[1][0])
 
         # Adjust legend position and marker size
         plt.legend(loc='upper left', title="Group Labels", title_fontsize='12', markerscale=5)
