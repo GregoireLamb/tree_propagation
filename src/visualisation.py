@@ -29,9 +29,9 @@ class Visualisation:
         warnings.filterwarnings('ignore', message='.*argument looks like a single numeric RGB*.', )
         plt.figure(figsize=(10, 8))
 
-        x = [x._gps[0] for x in pop._trees_alive]
-        y = [y._gps[1] for y in pop._trees_alive]
-        groups = [x._grouppe for x in pop._trees_alive]
+        x = [x._long for x in pop._trees_alive]
+        y = [y._lat for y in pop._trees_alive]
+        groups = [x._species for x in pop._trees_alive]
 
         colors = self.map_col2color(groups)
         plt.scatter(x=x, y=y, color=colors, alpha=0.75,  linewidth=0, s=2)

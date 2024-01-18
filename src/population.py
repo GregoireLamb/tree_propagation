@@ -1,6 +1,7 @@
 import pandas as pd
 from src.tree import Tree
 from src.utils import *
+import matplotlib.pyplot as plt
 
 from src.tree import Tree
 
@@ -89,11 +90,18 @@ class Population:
 
         for tree in self._trees_alive:
 
+            seeds = []
             # Get position of new sapling tree
             #  TODO: Use target lat/long as center for spread of new trees, not just one new tree
             target_lat, target_long = tree.update(config)
+            # update seed list
+            if not tree._alive:
+                self.remove_tree(tree)
 
-            if target_lat:
+        # TODO adapt group rules here
+        for seed in seeds:
+            # TODO decide if seed becomes tree
+            if target_lat: # if seed turns to tree
                 # Create new tree on new position
                 self._current_tree_id += 1
 
@@ -116,9 +124,8 @@ class Population:
             print(tree._alive)
 
             # Possibly remove old tree from forest
-            if not tree._alive:
-                self.remove_tree(tree)
 
-        # TODO adapt group rules here
+
+
 
         self.update_trees_statistics()

@@ -31,16 +31,18 @@ class Tree:
         self._height_level = compute_height_level(self._age)
         # DEPR  self._height_level += self._height_level * 5 / 100
 
-        # Blow seeds to target
-        target_lat, target_long = wind_blow(self._lat, self._long, (np.random.uniform(-1, 1), np.random.uniform(-1, 1)), np.random.randint(0, 35), self._spreading_factor)
+        # Decide if tree dies
+        self._alive = eval_mortality(self._age)
+        #TODO if surroundings are too crowded
 
+        # Blow seeds to target
+        # TODO seed generation
+        target_lat, target_long = wind_blow(self._lat, self._long, (np.random.uniform(-1, 1), np.random.uniform(-1, 1)), np.random.randint(0, 35), self._spreading_factor)
         #seeding_radius = config.default_seeding_radius
         #seed_spread((target_lat, target_long), self._height_level, seeding_radius)
 
-        # Decide if tree dies
-        self._alive = eval_mortality(self._age)
-        print(self._age)
-        return target_lat, target_long
+        # print(self._age)
+        return target_lat, target_long #TODO retun as a list
 
         # DEPR
         #rnd = 30 * random() # random number between 0 and 10

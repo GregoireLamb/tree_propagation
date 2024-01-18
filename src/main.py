@@ -29,7 +29,7 @@ def main():
 
     run_simulation(population, config, visualize)
 
-    visualize.make_gif()
+    # visualize.make_gif()
     population.plot_statistic()
 
 
