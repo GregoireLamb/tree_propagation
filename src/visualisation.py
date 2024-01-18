@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 
 def map_col2color(col):
-    unique_values = sorted(list(set(col)))
+    unique_values = list(set(col))
     num_unique_values = len(unique_values)
 
     # Use a colormap with a specific number of colors
@@ -21,9 +21,12 @@ def create_tree_map(pop):
     # Set a larger figure size
     plt.figure(figsize=(10, 8))
 
-    x = [x._gps[0] for x in pop._trees_alive]
-    y = [y._gps[1] for y in pop._trees_alive]
-    col = [x._grouppe for x in pop._trees_alive]
+    x = [x._long for x in pop._trees_alive]
+    y = [y._lat for y in pop._trees_alive]
+
+    print(x[0],y[0])
+
+    col = [x._species for x in pop._trees_alive]
 
     colors, labels = map_col2color(col)
 

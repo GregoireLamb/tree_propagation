@@ -17,7 +17,14 @@ class Config:
         self.seed = self.__config["seed"]
         self.data_path = self.__config["data_path"]
         self.data_file = self.__config["data_file"]
+        self.species_mapping_file = self.__config["species_mapping_file"]
+        self.species_translation_file = self.__config["species_translation_file"]
+        self.seed_amount_file = self.__config["seed_amount_file"]
+        self.spreading_factors_file = self.__config["spreading_factors_file"]
+        self.vienna_bounding_box = self.__config["vienna_bounding_box"]
         self.simulation_duration = self.__config["simulation_duration"]
+        self.default_seeding_radius = self.__config["default_seeding_radius"]
+
 
     def load_config(self):
         """

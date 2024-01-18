@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from src.config import Config
-from src.utils import *
+from src.utils import import_data, observe_data, run_simulation
 from src.visualisation import *
 from src.population import *
 
@@ -15,7 +15,7 @@ def main():
 
     # Data basic stat
     data = import_data(config)
-    observe_data(data)
+    #observe_data(data)
 
     # Create population
     population = Population()
