@@ -1,7 +1,11 @@
 pandas
-cartopy
 basemap_data_hires
 matplotlib
 geopandas
 imageio
 PyYaml
+numpy
+geographiclib
+shapely
+seaborn
+geopy

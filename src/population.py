@@ -88,44 +88,35 @@ class Population:
 
     def update_forest(self, config):
 
-        for tree in self._trees_alive:
+        forest_seeds = []
 
-            seeds = []
-            # Get position of new sapling tree
-            #  TODO: Use target lat/long as center for spread of new trees, not just one new tree
-            target_lat, target_long = tree.update(config)
-            # update seed list
+        for tree in self._trees_alive:
+            # Get list of seed originating from tree
+            tree_seeds = tree.update(config)
+            # Append to forest seed list
+            forest_seeds.append(tree_seeds)
+
+            # Possibly remove old tree from forest
             if not tree._alive:
                 self.remove_tree(tree)
 
+        forest_seeds_flat = [seed for tree_seeds in forest_seeds for seed in tree_seeds]
+
         # TODO adapt group rules here
-        for seed in seeds:
+        for seed in forest_seeds_flat:
             # TODO decide if seed becomes tree
-            if target_lat: # if seed turns to tree
-                # Create new tree on new position
-                self._current_tree_id += 1
+            # Create new tree on new position
+            self._current_tree_id += 1
 
-                new_tree = Tree(self._current_tree_id,
-                                target_lat,
-                                target_long,
-                                tree._species,
-                                0,
-                                0,
-                                tree._spreading_factor)
+            new_tree = Tree(self._current_tree_id,
+                            target_lat,
+                            target_long,
+                            tree._species,
+                            0,
+                            0,
+                            tree._spreading_factor)
 
-                # Add new tree to forest
-                self.add_tree(new_tree)
-
-                print(tree.id)
-                print(new_tree.id)
-
-
-            print(len(self._trees_alive))
-            print(tree._alive)
-
-            # Possibly remove old tree from forest
-
-
-
+            # Add new tree to forest
+            self.add_tree(new_tree)
 
         self.update_trees_statistics()
