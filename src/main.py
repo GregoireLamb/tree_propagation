@@ -21,7 +21,7 @@ def main():
     # Create population
     population = Population()
     population.populate(data)
-    visualize = Visualisation()
+    visualize = Visualisation(config)
     visualize.set_group_color_mapping(population._tree_groups)
     print(population)
 
@@ -29,7 +29,7 @@ def main():
 
     run_simulation(population, config, visualize)
 
-    # visualize.make_gif()
+    visualize.make_gif()
     population.plot_statistic()
 
 
