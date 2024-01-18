@@ -1,7 +1,6 @@
 import pandas as pd
 from src.tree import Tree
 from src.utils import *
-import matplotlib.pyplot as plt
 
 class Population:
     def __init__(self):

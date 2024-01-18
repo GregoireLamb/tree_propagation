@@ -1,12 +1,10 @@
 import random
 
-import matplotlib.pyplot as plt
-import pandas as pd
+# import matplotlib.pyplot as plt
 
 from src.config import Config
-from src.utils import *
-from src.visualisation import *
 from src.population import *
+from src.visualisation import *
 
 
 def main():
