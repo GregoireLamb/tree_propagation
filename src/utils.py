@@ -62,75 +62,6 @@ def run_simulation(population, config, visualize):
     visualize.create_visualisation_step(population, config.simulation_duration)
 
 
-def compute_height_level(age):
-    """
-    Computes the Chapman-Richards growth model
-
-    Returns the height level of a tree
-
-    Parameters
-    ----------
-    age : age
-    alpha : upper asymptote
-    beta : growth range
-    rate : growth rate
-    slope : slope of growth
-
-    References
-    ----------
-    .. [1] D. Fekedulegn, M. Mac Siurtain, and J. Colbert, "Parameter estimation
-           of nonlinear growth models in forestry," Silva Fennica, vol. 33,
-           no. 4, pp. 327-336, 1999.
-    """
-
-    alpha = 50  # Upper asymptote (max tree height)
-    beta = 0.8  # Growth range
-    rate = 0.08  # Growth rate
-    slope = 0.8  # Slope of growth
-
-    # flooring results to the next int
-    result = math.floor(alpha * (1 - beta * np.exp(-rate * age)) ** (1 / (1 - slope)))
-
-    if result == 0:
-        return 0
-    else:
-        level = (result - 1) // 5 + 1
-        return min(level, 8)
-
-
-def eval_mortality(age):
-    """
-    Determines if a tree is alive or dead based on a organism mortality probability distribution.
-
-    Returns a boolean with True if tree gets to live on
-
-    Parameters
-    ----------
-    age : age
-    alpha : upper asymptote
-    beta : growth range
-    rate : growth rate
-    slope : slope of growth
-
-    References
-    ----------
-    Petrovska, R., Bugmann, H., Hobi, M., Ghosh, S., & Brang, P. (2022).
-    Survival time and mortality rate of regeneration in the deep shade of a primeval beech forest.
-    European Journal of Forest Research, 141. https://doi.org/10.1007/s10342-021-01427-3
-    """
-    alpha = 1  # Upper asymptote
-    beta = 0.7  # Growth range
-    rate = 0.05  # Growth rate
-    slope = 0.9  # Slope of growth
-    delta = 0.8  # Clip bottom values
-
-    survival_probability = 1 - (alpha * (1 - beta * np.exp(-rate * age)) ** (1 / (1 - slope)) * delta)
-
-    random_number = np.random.random()  # Generate a random number between 0 and 1
-
-    return random_number < survival_probability
-
-
 def scale_to_lat_long(unit_vector, lat):
     """
     DEPRECATED
@@ -146,13 +77,11 @@ def scale_to_lat_long(unit_vector, lat):
     return np.array([lat_offset, long_offset])
 
 
-def wind_blow(start_lat, start_long, wind_direction, wind_strength, spreading_factor):
-    # Convert wind direction into a unit vector ## DEPR: using degrees now
-    # wind_direction = np.array([wind_direction[0], wind_direction[1]])
-    # wind_direction = wind_direction / np.linalg.norm(wind_direction)
+def get_seed_amount(config, height_level):
+    with open(config.data_path + config.seed_amount_file, 'r', encoding='utf-8') as f:
+        seed_amount_map = json.load(f)
 
-    # Calculate bearing of the wind in degrees (0 is North)
-    bearing = np.degrees(np.arctan2(*wind_direction[::-1])) % 360.0
+    seed_amount = seed_amount_map[height_level]
 
     # Determine distance vector from input factors
     distance_meters = wind_strength * spreading_factor
@@ -200,3 +129,4 @@ def distance_between_coordinate(lat1, lon1, lat2, lon2):
 
 def get_spreading_factor_from_species(species:int):
     return spreading_factor_map[species]
+    return seed_amount

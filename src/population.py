@@ -122,8 +122,15 @@ class Population:
 
     def update_forest(self, config):
 
-        for tree in self._trees_alive:
+        forest_seeds = []
 
+        for tree in self._trees_alive:
+            # Get list of seed originating from tree
+            tree_seeds = tree.update(config)
+            # Append to forest seed list
+            forest_seeds.append(tree_seeds)
+
+            # Possibly remove old tree from forest
             seeds = [((48.5, 50.2),3),
                      ((48.205699547351955, 16.36470369913982),5),
                      ((48.204758958461845, 16.36120381312751),5),
@@ -137,6 +144,8 @@ class Population:
             seeds= seeds+new_seed
             if not tree._alive:
                 self.remove_tree(tree)
+
+        forest_seeds_flat = [seed for tree_seeds in forest_seeds for seed in tree_seeds]
 
         # TODO adapt group rules here
         while seeds:
