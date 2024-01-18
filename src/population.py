@@ -73,7 +73,7 @@ class Population:
         plt.show()
 
     def populate(self, df):
-        self._trees = create_trees(df)
+        self._trees = self.create_trees(df)
         self._trees_alive = self._trees.copy()
 
         print("Length Trees Alive:", len(self._trees_alive))
@@ -131,17 +131,12 @@ class Population:
             forest_seeds.append(tree_seeds)
 
             # Possibly remove old tree from forest
-            seeds = [((48.5, 50.2),3),
-                     ((48.205699547351955, 16.36470369913982),5),
-                     ((48.204758958461845, 16.36120381312751),5),
-                     ((48.204760021383045, 16.361208597680285),5),
-                     ]
+            seeds = []
             # Get position of new sapling tree
             #  TODO: Use target lat/long as center for spread of new trees, not just one new tree
-            target_lat, target_long = tree.update(config)
-            new_seed = [((48.5, 16.2),1),((48.4, 16.2),4),((45.5, 16.2),3)]
+            new_seed = tree.update(config)
             # update seed list
-            seeds= seeds+new_seed
+            seeds = seeds + new_seed
             if not tree._alive:
                 self.remove_tree(tree)
 
@@ -178,3 +173,16 @@ class Population:
             if distance_between_coordinate(tree._lat, tree._long, seed[0][0], seed[0][1]) < radius:
                 return False
         return True
+
+    def create_trees(self, df):
+        forest = []
+        for row in df.iterrows():
+            location = row[1]["SHAPE"].split("(")[1].split(")")[0].split()
+            forest.append(Tree(row[0],
+                               float(location[1]),
+                               float(location[0]),
+                               row[1]["GRUPPE"],
+                               row[1]["BAUMHOEHE"],
+                               row[1]["ALTERab2023"],
+                               spreading_factor_map[row[1]["GRUPPE"]]))
+        return forest

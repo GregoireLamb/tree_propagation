@@ -5,7 +5,6 @@ import json
 from geographiclib.geodesic import Geodesic
 from math import radians, sin, cos, sqrt, atan2
 
-from src.tree import Tree
 
 spreading_factor_map = {
     1: 1.5,
@@ -39,20 +38,6 @@ def observe_data(df):
     print(df.info())
 
 
-def create_trees(df):
-    forest = []
-    for row in df.iterrows():
-        location = row[1]["SHAPE"].split("(")[1].split(")")[0].split()
-        forest.append(Tree(row[0],
-                           float(location[1]),
-                           float(location[0]),
-                           row[1]["GRUPPE"],
-                           row[1]["BAUMHOEHE"],
-                           row[1]["ALTERab2023"],
-                           spreading_factor_map[row[1]["GRUPPE"]]))
-    return forest
-
-
 def run_simulation(population, config, visualize):
     # TODO add a progress bar
     for year in range(config.simulation_duration):
@@ -77,29 +62,16 @@ def scale_to_lat_long(unit_vector, lat):
     return np.array([lat_offset, long_offset])
 
 
+
 def get_seed_amount(config, height_level):
-    with open(config.data_path + config.seed_amount_file, 'r', encoding='utf-8') as f:
+    with open(config.data_path + config.seed_amount_file, "r", encoding="utf-8") as f:
         seed_amount_map = json.load(f)
+
+    seed_amount_map = {int(k): v for k, v in seed_amount_map.items()}
 
     seed_amount = seed_amount_map[height_level]
 
-    # Determine distance vector from input factors
-    distance_meters = wind_strength * spreading_factor
-
-    # Set to World Geodetic System 1984 (GPS standard)
-    geod = Geodesic.WGS84
-    destination_point = geod.Direct(start_lat, start_long, bearing, distance_meters)
-
-    vienna_bounding_box = [48.12, 16.18, 48.32, 16.58]
-
-    # Check if the position is outside the map boundaries (assuming a square map of vienna)
-    if destination_point['lat2'] < vienna_bounding_box[0] or destination_point['lat2'] > vienna_bounding_box[2] or \
-            destination_point['lon2'] < vienna_bounding_box[1] or destination_point['lon2'] > vienna_bounding_box[3]:
-        # print("OUT OF BOUNDS")
-        return False, False
-
-    return destination_point['lat2'], destination_point['lon2']
-
+    return seed_amount
 
 def seed_spread(center_pos, tree_height_level, min_seeding_radius):
     planted_seeds = []

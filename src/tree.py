@@ -152,7 +152,7 @@ class Tree:
         - List of tuples with generated points as tuples (latitude, longitude) and species information.
         """
         seed_amount = get_seed_amount(config, self._height_level)
-        germination_rate = 0.1  # TODO as constant in config?
+        germination_rate = 0.001  # TODO as constant in config?
         germinating_seed_amount = seed_amount * germination_rate
 
         major_axis, minor_axis = 0.01, 0.005  # in kilometers # TODO make dependent on wind_strength & spreading_factor and change to meters
