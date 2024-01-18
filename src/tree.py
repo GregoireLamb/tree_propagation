@@ -5,8 +5,6 @@ import random
 from geographiclib.geodesic import Geodesic
 from shapely.geometry import Point, Polygon
 
-from src.utils import get_seed_amount
-
 
 class Tree:
     # rewrite with lower case
@@ -37,18 +35,16 @@ class Tree:
         self._alive = self.eval_mortality(self._age)
         # TODO if surroundings are too crowded
 
-        # Blow seeds to target
-        # TODO seed generation
-        tree_seeds = self.seeding(self._lat, self._long, (np.random.uniform(-1, 1), np.random.uniform(-1, 1)),
-                             np.random.randint(0, 35), self._spreading_factor, config)
+        if self._alive:
+            # Blow seeds to target
+            tree_seeds = self.seeding(self._lat, self._long, (np.random.uniform(-1, 1), np.random.uniform(-1, 1)),
+                                      np.random.randint(0, 35), self._spreading_factor, config)
+            return tree_seeds  # TODO return as a list
+        return []
 
-        return tree_seeds  # TODO return as a list
 
-        # DEPR
-        # rnd = 30 * random() # random number between 0 and 10
-        # if math.exp(self._age / 100) > rnd:
-        #    self._alive = False
-        #    return -1
+
+
 
     def seeding(self, start_lat, start_long, wind_direction, wind_strength, spreading_factor, config):
 
@@ -68,7 +64,7 @@ class Tree:
         # Check if the position is inside the map boundaries (assuming a square map of vienna)
         if seeding_center['lat2'] > vienna_bounding_box[0] or seeding_center['lat2'] < vienna_bounding_box[2] or \
                 seeding_center['lon2'] > vienna_bounding_box[1] or seeding_center['lon2'] < vienna_bounding_box[3]:
-
+            # TOSO
             return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config)
 
     def compute_height_level(self, age):
@@ -151,7 +147,7 @@ class Tree:
         Returns:
         - List of tuples with generated points as tuples (latitude, longitude) and species information.
         """
-        seed_amount = get_seed_amount(config, self._height_level)
+        seed_amount = config.seed_amount_map[self._height_level]
         germination_rate = 0.001  # TODO as constant in config?
         germinating_seed_amount = seed_amount * germination_rate
 
@@ -162,16 +158,17 @@ class Tree:
         ellipse_bbox = center_point.buffer(1).envelope
         seed_points = []
 
+        # print("genreate seed")
         while len(seed_points) < germinating_seed_amount:
             random_point = Point(
                 random.uniform(ellipse_bbox.bounds[0], ellipse_bbox.bounds[2]),
                 random.uniform(ellipse_bbox.bounds[1], ellipse_bbox.bounds[3])
             )
 
-            if center_point.distance(random_point) <= major_axis * 0.5 and \
-                    center_point.distance(random_point) <= minor_axis * 0.5:
+            if ellipse_bbox.contains(random_point):
                 seed_points.append((random_point.y, random_point.x))
 
+        # print("seeds OK")
         return [(seed_point, self._species) for seed_point in seed_points]
 
 

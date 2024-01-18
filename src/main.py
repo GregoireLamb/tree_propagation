@@ -27,7 +27,8 @@ def main():
     run_simulation(population, config, visualize)
 
     visualize.make_gif()
-    population.plot_statistic(config) #TODO map names and cumulative plot
+    population.plot_statistic(config)
+    print(population)
 
 
 if __name__ == '__main__':

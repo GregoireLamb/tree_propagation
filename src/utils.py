@@ -5,6 +5,7 @@ import json
 from geographiclib.geodesic import Geodesic
 from math import radians, sin, cos, sqrt, atan2
 
+seed_amount = None
 
 spreading_factor_map = {
     1: 1.5,
@@ -19,6 +20,7 @@ spreading_factor_map = {
     10: 0.7,
     11: 0.8
 }
+
 
 
 def import_data(config):
@@ -60,18 +62,6 @@ def scale_to_lat_long(unit_vector, lat):
     long_offset = (1 + unit_vector[1]) / (111111 * np.cos(lat))
 
     return np.array([lat_offset, long_offset])
-
-
-
-def get_seed_amount(config, height_level):
-    with open(config.data_path + config.seed_amount_file, "r", encoding="utf-8") as f:
-        seed_amount_map = json.load(f)
-
-    seed_amount_map = {int(k): v for k, v in seed_amount_map.items()}
-
-    seed_amount = seed_amount_map[height_level]
-
-    return seed_amount
 
 def seed_spread(center_pos, tree_height_level, min_seeding_radius):
     planted_seeds = []

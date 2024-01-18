@@ -1,3 +1,5 @@
+import json
+
 import yaml
 from pathlib import Path
 
@@ -25,6 +27,11 @@ class Config:
         self.default_seeding_radius = self.__config["default_seeding_radius"]
         self.bounding_box = ((self.__config["vienna_bounding_box_lat1"], self.__config["vienna_bounding_box_long1"]),
                              (self.__config["vienna_bounding_box_lat2"],self.__config["vienna_bounding_box_long2"]))
+
+        with open(self.data_path + self.seed_amount_file, "r", encoding="utf-8") as f:
+            self.seed_amount_map = json.load(f)
+            self.seed_amount_map = {int(k): v for k, v in self.seed_amount_map.items()}
+
 
     def load_config(self):
         """

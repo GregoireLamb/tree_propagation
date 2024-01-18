@@ -124,32 +124,22 @@ class Population:
 
         forest_seeds = []
 
-        for tree in self._trees_alive:
-            # Get list of seed originating from tree
+        for i, tree in enumerate(self._trees_alive):
+            # Update each tree
             tree_seeds = tree.update(config)
-            # Append to forest seed list
-            forest_seeds.append(tree_seeds)
+            forest_seeds = forest_seeds + tree_seeds
 
-            # Possibly remove old tree from forest
-            seeds = []
-            # Get position of new sapling tree
-            #  TODO: Use target lat/long as center for spread of new trees, not just one new tree
-            new_seed = tree.update(config)
-            # update seed list
-            seeds = seeds + new_seed
             if not tree._alive:
                 self.remove_tree(tree)
 
-        forest_seeds_flat = [seed for tree_seeds in forest_seeds for seed in tree_seeds]
-
         # TODO adapt group rules here
-        while seeds:
+        while forest_seeds:
             # TODO decide if seed becomes tree
             # Naive approach: select random seed and become tree if closest neighbor is further away than 1m
             # runs in O(s²t) s len seed t len tree
 
-            random_index = random.randint(0, len(seeds) - 1)
-            seed = seeds.pop(random_index)
+            random_index = random.randint(0, len(forest_seeds) - 1)
+            seed = forest_seeds.pop(random_index)
             if self.seed_has_enough_space_around(seed, radius=1):
                 # Create new tree on new position
                 self._current_tree_id += 1
@@ -165,7 +155,7 @@ class Population:
 
                 # Add new tree to forest
                 self.add_tree(new_tree)
-        self.update_trees_statistics()
+            self.update_trees_statistics()
 
     def seed_has_enough_space_around(self, seed, radius):
         # TODO implement as population attribute binary search trees and update them allong
