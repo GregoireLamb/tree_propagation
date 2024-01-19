@@ -21,17 +21,21 @@ class Config:
         self.data_file = self.__config["data_file"]
         self.species_mapping_file = self.__config["species_mapping_file"]
         self.species_translation_file = self.__config["species_translation_file"]
+        self.species_label_mapping_file = self.__config["species_label_mapping_file"]
         self.seed_amount_file = self.__config["seed_amount_file"]
         self.spreading_factors_file = self.__config["spreading_factors_file"]
         self.simulation_duration = self.__config["simulation_duration"]
         self.default_seeding_radius = self.__config["default_seeding_radius"]
         self.bounding_box = ((self.__config["vienna_bounding_box_lat1"], self.__config["vienna_bounding_box_long1"]),
-                             (self.__config["vienna_bounding_box_lat2"],self.__config["vienna_bounding_box_long2"]))
+                             (self.__config["vienna_bounding_box_lat2"], self.__config["vienna_bounding_box_long2"]))
 
         with open(self.data_path + self.seed_amount_file, "r", encoding="utf-8") as f:
             self.seed_amount_map = json.load(f)
             self.seed_amount_map = {int(k): v for k, v in self.seed_amount_map.items()}
 
+        with open(self.data_path + self.species_label_mapping_file, "r", encoding="utf-8") as f:
+            species_label_map = json.load(f)
+            self.species_label_map = {int(k): v for k, v in species_label_map.items()}
 
     def load_config(self):
         """
