@@ -1,0 +1,19 @@
+data_path: '../data/'
+data_file: 'BaumkatasterModSimMedium.csv'
+species_mapping_file: 'species_mapping.json'
+species_translation_file: 'species_mapping.json'
+species_label_mapping_file: 'species_label_mapping.json'
+seed_amount_file: 'seed_amount.json'
+spreading_factors_file: 'spreading_factors.json'
+default_seeding_radius: 5
+simulation_duration: 3
+wind_strategy: 'constant' # 'random' or 'constant'
+wind_speed: 10
+wind_direction: (0, 1)
+seed: 123
+vienna_bounding_box_lat1: 48.11
+vienna_bounding_box_long1: 16.18
+vienna_bounding_box_lat2: 48.33
+vienna_bounding_box_long2: 16.58
+ignore: 'BaumkatasterModSim.csv'
+ignore2: 'data_small.csv'
