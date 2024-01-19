@@ -8,3 +8,4 @@ numpy
 geographiclib
 shapely
 geopy
+alive_progress

@@ -2,6 +2,7 @@ import pandas as pd
 from src.tree import Tree
 from src.utils import *
 import matplotlib.pyplot as plt
+from alive_progress import alive_bar
 import random
 
 from src.tree import Tree
@@ -76,7 +77,7 @@ class Population:
         self._trees = self.create_trees(df)
         self._trees_alive = self._trees.copy()
 
-        print("Length Trees Alive:", len(self._trees_alive))
+        print("Number of Trees Alive:", len(self._trees_alive))
 
         self._tree_groups = list(set([tree._species for tree in self._trees]))
 
@@ -99,9 +100,9 @@ class Population:
         self._trees.append(tree)
         self._trees_alive.append(tree)
 
-    def remove_tree(self, tree):
-        self._trees_alive.remove(tree)
-        #self._trees.remove(tree)
+    def remove_trees(self, trees):
+        for tree in trees:
+            self._trees_alive.remove(tree)
 
     def get_trees(self, id):
         return self._trees[id]
@@ -120,41 +121,57 @@ class Population:
         self._statistic.loc[len(self._statistic)] = new_row
         return trees_per_group
 
-    def update_forest(self, config):
+    def update_forest(self, config, year):
+        year = year + self._starting_year
 
         forest_seeds = []
+        i = 0
+        trees_to_remove = []
 
-        for i, tree in enumerate(self._trees_alive):
-            # Update each tree
-            tree_seeds = tree.update(config)
-            forest_seeds = forest_seeds + tree_seeds
+        with alive_bar(total=len(self._trees_alive), title=f"Update Trees: [{year}]".format(i),
+                       spinner='classic') as bar:  # len(train_loader) = n_batches
+            for i, tree in enumerate(self._trees_alive):
+                # Update each tree
+                tree_seeds = tree.update(config)
+                forest_seeds = forest_seeds + tree_seeds
 
-            if not tree._alive:
-                self.remove_tree(tree)
+                if not tree._alive:
+                    trees_to_remove.append(tree)
+                bar()
+
+            # remove trees
+            self.remove_trees(trees_to_remove)
+
 
         # TODO adapt group rules here
-        while forest_seeds:
-            # TODO decide if seed becomes tree
-            # Naive approach: select random seed and become tree if closest neighbor is further away than 1m
-            # runs in O(s²t) s len seed t len tree
+        n_seed = len(forest_seeds)
+        planted = 0
+        with alive_bar(total=n_seed, title="Plant seed Trees: ".format(planted),
+                       spinner='classic') as bar:  # len(train_loader) = n_batches
+            while forest_seeds:
+                # TODO decide if seed becomes tree
+                # Naive approach: select random seed and become tree if closest neighbor is further away than 1m
+                # runs in O(s²t) s len seed t len tree
 
-            random_index = random.randint(0, len(forest_seeds) - 1)
-            seed = forest_seeds.pop(random_index)
-            if self.seed_has_enough_space_around(seed, radius=1):
-                # Create new tree on new position
-                self._current_tree_id += 1
-                # print(f'new seed: {seed}')
+                random_index = random.randint(0, len(forest_seeds) - 1)
+                seed = forest_seeds.pop(random_index)
+                planted += 1
+                if self.seed_has_enough_space_around(seed, radius=1):
+                    # Create new tree on new position
+                    self._current_tree_id += 1
+                    # print(f'new seed: {seed}')
 
-                new_tree = Tree(self._current_tree_id,
-                                seed[0][0],
-                                seed[0][1],
-                                seed[1],
-                                0,
-                                0,
-                                get_spreading_factor_from_species(seed[1]))
+                    new_tree = Tree(self._current_tree_id,
+                                    seed[0][0],
+                                    seed[0][1],
+                                    seed[1],
+                                    0,
+                                    0,
+                                    get_spreading_factor_from_species(seed[1]))
 
-                # Add new tree to forest
-                self.add_tree(new_tree)
+                    # Add new tree to forest
+                    self.add_tree(new_tree)
+                    bar()
             self.update_trees_statistics()
 
     def seed_has_enough_space_around(self, seed, radius):
