@@ -8,7 +8,7 @@ from shapely.geometry import Point, Polygon
 
 class Tree:
     # rewrite with lower case
-    def __init__(self, id, lat, long, species, height, age, spreading_factor):
+    def __init__(self, id, lat, long, species=1, height=0, age=0, spreading_factor=1):
         self.id = id
         self._lat = lat
         self._long = long
@@ -19,7 +19,7 @@ class Tree:
         self._alive = True
 
     def __repr__(self):
-        return f"Tree(id:{self.id}, position:({self._lat}{self._long}), group:{self._species}, height:{self._height_level}, age:{self._age})"
+        return f"Tree(id:{self.id}, position:({self._lat}, {self._long}), group:{self._species}, height:{self._height_level}, age:{self._age})"
 
     def update(self, config):
         # TODO adapt individual rules here
@@ -39,7 +39,7 @@ class Tree:
             # Blow seeds to target
             tree_seeds = self.seeding(self._lat, self._long, (np.random.uniform(-1, 1), np.random.uniform(-1, 1)),
                                       np.random.randint(0, 35), self._spreading_factor, config)
-            return tree_seeds  # TODO return as a list
+            return tree_seeds
         return []
 
 

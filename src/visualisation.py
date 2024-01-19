@@ -13,6 +13,8 @@ class Visualisation:
             self.group_name_mapping = json.load(f)
         self.group_name_mapping_reversed = {v: k for k, v in self.group_name_mapping.items()}
         self.bounding_box = config.bounding_box
+        self.show_plot_on_the_fly = config.show_plot_on_the_fly
+        self.tree_size_visualization = config.tree_size_visualization
 
     def set_group_color_mapping(self, col):
         unique_values = sorted(list(set(col)))
@@ -42,7 +44,7 @@ class Visualisation:
 
         colors = self.map_col2color(groups)
 
-        plt.scatter(x=x, y=y, color=colors, alpha=0.75,  linewidth=0, s=2)
+        plt.scatter(x=x, y=y, color=colors, alpha=0.75,  linewidth=0, s=self.tree_size_visualization)
 
         # add custom legend
         plt.fill([], [], c='lightblue', label='Danube')
@@ -65,7 +67,8 @@ class Visualisation:
 
         if save_path is not None:
             plt.savefig(save_path)
-        plt.show()
+        if self.show_plot_on_the_fly:
+            plt.show()
 
     def draw_vienna(self, file_path='../data/export.geojson'):
         gdf = gpd.read_file(file_path)
@@ -91,16 +94,16 @@ class Visualisation:
             os.mkdir(path)
         self.create_tree_map(pop, pop._starting_year+iteration, save_path=path + f"step_{iteration}.png")
 
-    def make_gif(self, path='../results/', output_path='../results/gif/'):
+    def make_gif(self, img_path='../results/', output_path='../results/gif/'):
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
         images_name = []
         images = []
-        for filename in os.listdir(path):
-            if filename.endswith('.png'):
+        for filename in os.listdir(img_path):
+            if filename.endswith('.png') and filename.startswith('step'):
                 images_name.append((filename, int(filename.split('_')[1].split('.')[0])))
         for image_file, order in sorted(images_name, key=lambda x: x[1]):
-            images.append(imageio.imread(path + image_file))
+            images.append(imageio.imread(img_path + image_file))
         imageio.mimsave(output_path + 'simulation.gif', images, fps=2)
 
 if __name__ == '__main__':

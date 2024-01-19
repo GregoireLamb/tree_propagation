@@ -1,45 +1,65 @@
+import sys
+from operator import attrgetter
+
 import pandas as pd
 from src.tree import Tree
-from src.utils import *
 import matplotlib.pyplot as plt
-from alive_progress import alive_bar
 import random
+import bisect
+from alive_progress import alive_bar
 
 from src.tree import Tree
+from src.utils import *
 
 
 class Population:
     def __init__(self):
         self._trees = []
         self._trees_alive = []
+        self.group_name_mapping = None
 
         self._tree_groups = None
         self._statistic = None
         self._starting_year = 2024
         self._current_tree_id = 168880  # extract max id from initial df
-        # self._simulation_counter = 0    # keep track of simulation years to increment tree level
+
 
     def __repr__(self):
+        stat_to_print = self._statistic.rename(columns=self.group_name_mapping)
         return (f"Population: " +
                 f"\n\t- Started in year {self._starting_year}" +
                 f"\n\t- {len(self._trees)} trees in total" +
                 f"\n\t- {len(self._trees) - len(self._trees_alive)} trees dead" +
-                f"\n\n\t- Population statistic\n{self._statistic}")
+                f"\n\n\t- Population statistic\n{stat_to_print}")
 
     def plot_statistic(self, config):
         with open(config.data_path + config.species_mapping_file, 'r', encoding='utf-8') as f:
             group_name_mapping = json.load(f)
 
-        self.plot_population_group_over_time(group_name_mapping)
-        self.plot_cumul_group_over_time(group_name_mapping)
+        save_path = config.result_path
+        #TODO add proportion plot
+        self.plot_population_group_over_time(group_name_mapping, save_path, show_plot_on_the_fly=config.show_plot_on_the_fly)
+        self.plot_cumul_group_over_time(group_name_mapping, save_path, show_plot_on_the_fly=config.show_plot_on_the_fly)
 
-    def plot_cumul_group_over_time(self, group_name_mapping):
+        #Save the logs in csv
+        with open(save_path+'log.txt', 'w') as file:
+            sys.stdout = file  # Redirect standard output to the file
+            print(self)
+            sys.stdout = sys.__stdout__
+
+        # save stat as csv
+        stat_to_print = self._statistic.rename(columns=self.group_name_mapping)
+        stat_to_print.to_csv(save_path+'Population_evolution.csv', index=False)
+
+
+
+    def plot_cumul_group_over_time(self, group_name_mapping, save_path, show_plot_on_the_fly):
         fig, ax = plt.subplots(figsize=(10, 6))
         stat = self._statistic.copy()
         year = stat["year"].values
         stat = stat[self._tree_groups]
         group_name_mapping = {value: key for key, value in group_name_mapping.items()}
-        stat=stat.rename(columns=group_name_mapping)
+        stat = stat.rename(columns=group_name_mapping)
         stat = stat.to_dict(orient='list')
         # map stat key to group_name_mapping key
 
@@ -51,13 +71,13 @@ class Population:
         ax.set_title('Population size over time (cumul)')
 
         plt.tight_layout()  # Ensures the legend fits within the figure
-        plt.show()
+        plt.savefig(save_path+"population_cumul_evolution.png")
+        if show_plot_on_the_fly:
+            plt.show()
+        plt.clf()
 
-
-    def plot_population_group_over_time(self, group_name_mapping):
+    def plot_population_group_over_time(self, group_name_mapping, save_path, show_plot_on_the_fly):
         fig, ax = plt.subplots(figsize=(10, 6))
-        # ax.plot(self._statistic['year'], self._statistic['population_size'], label="Population size")
-
         for group in self._tree_groups:
             label = group_name_mapping.get(group, "group")
             for key, value in group_name_mapping.items():
@@ -71,11 +91,19 @@ class Population:
         ax.set_title('Population size over time')
 
         plt.tight_layout()  # Ensures the legend fits within the figure
-        plt.show()
+        plt.savefig(save_path+"population_evolution.png")
+        if show_plot_on_the_fly:
+            plt.show()
+        plt.clf()
 
-    def populate(self, df):
+    def populate(self, df, config):
+        self.group_name_mapping = config.group_name_mapping
+        self.group_name_mapping = {v: k for k, v in self.group_name_mapping.items()}
         self._trees = self.create_trees(df)
+        #TODO assert trees in the bounding box
         self._trees_alive = self._trees.copy()
+
+        self._trees_alive = sorted(self._trees_alive, key=attrgetter('_lat', '_long'))
 
         print("Number of Trees Alive:", len(self._trees_alive))
 
@@ -96,9 +124,9 @@ class Population:
         self._statistic.loc[0] = initial_row
         print(self._statistic)
 
-    def add_tree(self, tree):
+    def add_tree(self, tree, alive_indice):
         self._trees.append(tree)
-        self._trees_alive.append(tree)
+        self._trees_alive.insert(alive_indice, tree)
 
     def remove_trees(self, trees):
         for tree in trees:
@@ -156,7 +184,8 @@ class Population:
                 random_index = random.randint(0, len(forest_seeds) - 1)
                 seed = forest_seeds.pop(random_index)
                 planted += 1
-                if self.seed_has_enough_space_around(seed, radius=1):
+                indice = self.seed_has_enough_space_around(seed, radius=10000) #retun -1 if not enough space, indice for insertion otherwise
+                if indice != -1: #TODO here adapt radius
                     # Create new tree on new position
                     self._current_tree_id += 1
                     # print(f'new seed: {seed}')
@@ -170,16 +199,30 @@ class Population:
                                     get_spreading_factor_from_species(seed[1]))
 
                     # Add new tree to forest
-                    self.add_tree(new_tree)
-                    bar()
+                    self.add_tree(new_tree, indice) #TODO insert at right place
+                bar()
             self.update_trees_statistics()
 
     def seed_has_enough_space_around(self, seed, radius):
         # TODO implement as population attribute binary search trees and update them allong
-        for tree in self._trees_alive:
+        trees, start_index, stop_index = self.trees_in_the_surroundings(seed[0][0], seed[0][1], radius)
+        for tree in trees:
             if distance_between_coordinate(tree._lat, tree._long, seed[0][0], seed[0][1]) < radius:
-                return False
-        return True
+                return -1
+        return start_index #TODO adapt
+
+    def trees_in_the_surroundings(self, lat, long, radius):
+        # binary search
+        lat_min, long_min, lat_max, long_max = box_around_lat_long(lat, long, radius)
+        start_index = bisect.bisect_left(KeyWrapper(self._trees_alive, key=lambda t: (t._lat,t._long)), (lat_min, long_min))
+        end_index = bisect.bisect_left(KeyWrapper(self._trees_alive, key=lambda t: (t._lat,t._long)), (lat_max, long_max))
+        # print(f"start_index: {start_index}, end_index: {end_index}")
+        start_index = max(0, start_index)
+        end_index = min(len(self._trees_alive), end_index)
+
+        # print(f"Candidates for {lat}, {long}")
+        # print(self._trees_alive[start_index:end_index])
+        return self._trees_alive[start_index:end_index], start_index, end_index
 
     def create_trees(self, df):
         forest = []
@@ -193,3 +236,21 @@ class Population:
                                row[1]["ALTERab2023"],
                                spreading_factor_map[row[1]["GRUPPE"]]))
         return forest
+
+
+class KeyWrapper:
+    def __init__(self, iterable, key):
+        self.it = iterable
+        self.key = key
+
+    def __getitem__(self, i):
+        return self.key(self.it[i])
+
+    def __len__(self):
+        return len(self.it)
+
+    def insert(self, index, item):
+        print('asked to insert %s at index%d' % (item, index))
+        self.it.insert(index, item)
+
+

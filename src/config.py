@@ -17,8 +17,11 @@ class Config:
 
         # Execution
         self.seed = self.__config["seed"]
+        self.show_plot_on_the_fly = self.__config["show_plot_on_the_fly"]
         self.data_path = self.__config["data_path"]
         self.data_file = self.__config["data_file"]
+        self.result_path = self.__config["result_path"]
+        self.tree_size_visualization = self.__config["tree_size_visualization"]
         self.species_mapping_file = self.__config["species_mapping_file"]
         self.species_translation_file = self.__config["species_translation_file"]
         self.seed_amount_file = self.__config["seed_amount_file"]
@@ -31,6 +34,9 @@ class Config:
         with open(self.data_path + self.seed_amount_file, "r", encoding="utf-8") as f:
             self.seed_amount_map = json.load(f)
             self.seed_amount_map = {int(k): v for k, v in self.seed_amount_map.items()}
+
+        with open(self.data_path + self.species_mapping_file, 'r', encoding="utf-8") as f:
+            self.group_name_mapping = json.load(f)
 
 
     def load_config(self):

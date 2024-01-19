@@ -3,7 +3,7 @@ import numpy as np
 import math
 import json
 from geographiclib.geodesic import Geodesic
-from math import radians, sin, cos, sqrt, atan2
+from math import radians, sin, cos, sqrt, atan2, degrees
 
 seed_amount = None
 
@@ -43,9 +43,9 @@ def observe_data(df):
 def run_simulation(population, config, visualize):
     # TODO add a progress bar
     for year in range(config.simulation_duration):
-        visualize.create_visualisation_step(population, year)
+        visualize.create_visualisation_step(population, year, config.result_path)
         population.update_forest(config, year)
-    visualize.create_visualisation_step(population, config.simulation_duration)
+    visualize.create_visualisation_step(population, config.simulation_duration, config.result_path)
 
 
 def scale_to_lat_long(unit_vector, lat):
@@ -91,3 +91,24 @@ def distance_between_coordinate(lat1, lon1, lat2, lon2):
 def get_spreading_factor_from_species(species:int):
     return spreading_factor_map[species]
     return seed_amount
+
+def box_around_lat_long(original_latitude, original_longitude, meters_difference):
+        # Earth radius in meters
+        earth_radius = 6371000.0
+
+        # Convert latitude and longitude to radians
+        # original_latitude_rad = radians(meters_difference)
+        # original_longitude_rad = radians(meters_difference)
+
+        # Calculate the change in latitude and longitude in radians
+        delta_latitude_rad = meters_difference / earth_radius
+        delta_longitude_rad = meters_difference / (earth_radius * cos(original_latitude))
+
+        # Calculate the new coordinates
+        latitude_left = original_latitude - delta_latitude_rad
+        longitude_down = original_longitude - delta_longitude_rad
+
+        latitude_right = original_latitude + delta_latitude_rad
+        longitude_up = original_longitude + delta_longitude_rad
+        return latitude_left, longitude_down, latitude_right, longitude_up
+
