@@ -28,6 +28,7 @@ class Config:
         self.spreading_factors_file = self.__config["spreading_factors_file"]
         self.simulation_duration = self.__config["simulation_duration"]
         self.default_seeding_radius = self.__config["default_seeding_radius"]
+        self.seed_living_space = self.__config["seed_living_space"]
         self.bounding_box = ((self.__config["vienna_bounding_box_lat1"], self.__config["vienna_bounding_box_long1"]),
                              (self.__config["vienna_bounding_box_lat2"],self.__config["vienna_bounding_box_long2"]))
 
