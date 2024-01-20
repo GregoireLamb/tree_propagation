@@ -59,12 +59,10 @@ class Tree:
         # Calculate center of new seeds
         seeding_center = geod.Direct(start_lat, start_long, bearing, distance_meters)
 
-        vienna_bounding_box = [48.12, 16.18, 48.32, 16.58]
-
         # Check if the position is inside the map boundaries (assuming a square map of vienna)
-        if seeding_center['lat2'] > vienna_bounding_box[0] or seeding_center['lat2'] < vienna_bounding_box[2] or \
-                seeding_center['lon2'] > vienna_bounding_box[1] or seeding_center['lon2'] < vienna_bounding_box[3]:
-            # TOSO
+        if seeding_center['lat2'] > config.bounding_box[0][0] or seeding_center['lat2'] < config.bounding_box[1][0] or \
+                seeding_center['lon2'] > config.bounding_box[0][1] or seeding_center['lon2'] < config.bounding_box[1][1]:
+
             return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config)
 
     def compute_height_level(self, age):
