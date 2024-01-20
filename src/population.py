@@ -32,8 +32,8 @@ class Population:
                 f"\n\n\t- Population statistic\n{stat_to_print}")
 
     def plot_statistic(self, config):
-        #with open(config.data_path + config.species_mapping_file, 'r', encoding='utf-8') as f:
-        #    group_name_mapping = json.load(f)
+        with open(config.data_path + config.species_mapping_file, 'r', encoding='utf-8') as f:
+            group_name_mapping = json.load(f)
 
         save_path = config.result_path
         # TODO add proportion plot
@@ -52,11 +52,6 @@ class Population:
         stat_to_print.to_csv(save_path + 'Population_evolution.csv', index=False)
 
     def plot_cumul_group_over_time(self, group_name_mapping, save_path, show_plot_on_the_fly):
-        self.plot_population_group_over_time(config.species_label_map)
-        self.plot_cumul_group_over_time(config.species_label_map)
-        self.plot_proportional_group_over_time(config.species_label_map)
-
-    def plot_cumul_group_over_time(self, species_label_map):
         fig, ax = plt.subplots(figsize=(10, 6))
         stat = self._statistic.copy()
         year = stat["year"].values
@@ -82,11 +77,11 @@ class Population:
     def plot_population_group_over_time(self, group_name_mapping, save_path, show_plot_on_the_fly):
         fig, ax = plt.subplots(figsize=(10, 6))
         for group in self._tree_groups:
-            #label = group_name_mapping.get(group, "group")
-            #for key, value in group_name_mapping.items():
-            #    if value == group:
-            #        label = key
-            ax.plot(self._statistic['year'], self._statistic[group], label=species_label_map[group])
+            label = group_name_mapping.get(group, "group")
+            for key, value in group_name_mapping.items():
+                if value == group:
+                    label = key
+            ax.plot(self._statistic['year'], self._statistic[group], label=label)
 
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         ax.set_xlabel('Year')
@@ -110,29 +105,6 @@ class Population:
                     config.bounding_box[0][1] <= tree._long <= config.bounding_box[1][1]):
                 self._trees.append(tree)
 
-    def plot_proportional_group_over_time(self, species_label_map):
-        fig, ax = plt.subplots(figsize=(10, 6))
-        stat = self._statistic.copy()
-        year = stat["year"].values
-        stat = stat[self._tree_groups]
-        #group_name_mapping = {value: key for key, value in group_name_mapping.items()}
-        stat = stat.rename(columns=species_label_map)
-
-        # Calculate proportions
-        stat_proportions = stat.div(stat.sum(axis=1), axis=0)
-
-        ax.stackplot(year, stat_proportions.values.T,
-                     labels=stat_proportions.columns, alpha=0.8)
-        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Proportion')
-        ax.set_title('Proportion of each species over time')
-
-        plt.tight_layout()  # Ensures the legend fits within the figure
-        plt.show()
-
-    def populate(self, df):
-        self._trees = self.create_trees(df)
         self._trees_alive = self._trees.copy()
         self._trees_alive = sorted(self._trees_alive, key=attrgetter('_lat', '_long'))
         print("Number of Trees Alive:", len(self._trees_alive))

@@ -36,7 +36,7 @@ class Visualisation:
 
     def create_tree_map(self, pop, year, save_path=None):
         warnings.filterwarnings('ignore', message='.*argument looks like a single numeric RGB*.', )
-        fig, ax = plt.subplots(figsize=(10, 8))
+        plt.figure(figsize=(10, 8))
 
         x = [x._long for x in pop._trees_alive]
         y = [y._lat for y in pop._trees_alive]
@@ -56,24 +56,14 @@ class Visualisation:
         self.draw_danube()
         self.draw_vienna()
 
-        # Set limits
-        plt.xlim(self.bounding_box[0][1], self.bounding_box[1][1])
-        plt.ylim(self.bounding_box[0][0], self.bounding_box[1][0])
+        plt.xlim(self.bounding_box[0][1],self.bounding_box[1][1])
+        plt.ylim(self.bounding_box[0][0],self.bounding_box[1][0])
 
         # Adjust legend position and marker size
         plt.legend(loc='upper left', title="Group Labels", title_fontsize='12', markerscale=5)
 
         # Add a main title
         plt.suptitle(f"Tree Population {year}", fontsize=20)
-
-        ax.set_xticks([])  # Remove x-axis ticks
-        ax.set_yticks([])  # Remove y-axis ticks
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-
-        plt.tight_layout()
 
         if save_path is not None:
             plt.savefig(save_path)
@@ -83,7 +73,7 @@ class Visualisation:
     def draw_vienna(self, file_path='../data/export.geojson'):
         gdf = gpd.read_file(file_path)
         coordinates = gdf.geometry.unary_union.exterior.xy
-        plt.plot(coordinates[0], coordinates[1], linewidth=1, color='black', label='Vienna')
+        plt.plot(coordinates[0], coordinates[1], linewidth=2, color='blue', label='Vienna')
 
     def draw_danube(self, dir_path='../data/'):
         for file in os.listdir(dir_path):
