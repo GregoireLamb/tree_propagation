@@ -1,7 +1,7 @@
 import math
 import numpy as np
 import random
-# from src.utils import compute_height_level
+from src.utils import *
 from geographiclib.geodesic import Geodesic
 from shapely.geometry import Point
 
@@ -21,7 +21,7 @@ class Tree:
     def __repr__(self):
         return f"Tree(id:{self.id}, position:({self._lat}, {self._long}), group:{self._species}, height:{self._height_level}, age:{self._age})"
 
-    def update(self, config):
+    def update(self, config, wind_direction, wind_strength):
         # Adapt individual rules here
         self._age += 1
         self._height_level = self.compute_height_level(self._age)
@@ -29,32 +29,32 @@ class Tree:
 
         if self._alive:
             # Blow seeds to target
-            tree_seeds = self.seeding(self._lat, self._long, (np.random.uniform(-1, 1), np.random.uniform(-1, 1)),
-                                      np.random.randint(0, 35), self._spreading_factor, config)
-            # TODO assert seed are valid and pre filter
+            tree_seeds = self.seeding(self._lat, self._long,wind_direction, wind_strength , self._spreading_factor, config)
             return tree_seeds
         return []
 
 
     def seeding(self, start_lat, start_long, wind_direction, wind_strength, spreading_factor, config):
-
+        """"
+        Strategy: generate seeds from random position in a circle whose center is at wind_strength * spreading_factor from the acctual tree
+        the circle radius if the from the config // could use the spreading factor
+        """
         # Calculate bearing of the wind in degrees (0 is North)
-        bearing = np.degrees(np.arctan2(*wind_direction[::-1])) % 360.0
+        bearing = wind_direction
 
         # Determine distance vector from input factors
         distance_meters = wind_strength * spreading_factor
 
         # Set to World Geodetic System 1984 (GPS standard)
-        geod = Geodesic.WGS84
-        # Calculate center of new seeds
-        seeding_center = geod.Direct(start_lat, start_long, bearing, distance_meters)
+        # Calculate center of circle new seeds
+        seeding_center = Geodesic.WGS84.Direct(start_lat, start_long, bearing, distance_meters)
 
-        # vienna_bounding_box = [48.12, 16.18, 48.32, 16.58]
-        #
-        # # Check if the position is inside the map boundaries (assuming a square map of vienna)
-        # if seeding_center['lat2'] > vienna_bounding_box[0] or seeding_center['lat2'] < vienna_bounding_box[2] or \
-        #         seeding_center['lon2'] > vienna_bounding_box[1] or seeding_center['lon2'] < vienna_bounding_box[3]:
-        return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config)
+        # print(f"tree lat : {start_lat},\n\t long {start_long}, "
+        #       f"\n\t centre lat {seeding_center['lat2']} \n\t"
+        #       f"center long {seeding_center['lon2']} \n "
+        #       f"bearing : {bearing}, distance_meters : {distance_meters} (wind_strength: {wind_strength} spreading_factor: {spreading_factor}")
+
+        return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config, distance_meters=distance_meters)
 
     def compute_height_level(self, age):
         """
@@ -80,7 +80,7 @@ class Tree:
         alpha = 50  # Upper asymptote (max tree height)
         beta = 0.8  # Growth range
         rate = 0.08  # Growth rate
-        slope = 0.8  # Slope of growth
+        slope = 0.3  # Slope of growth
 
         # flooring results to the next int
         result = math.floor(alpha * (1 - beta * np.exp(-rate * age)) ** (1 / (1 - slope)))
@@ -123,47 +123,47 @@ class Tree:
 
         return random_number < survival_probability
 
-    # TODO: Offset of center point along the major axis (depending on wind strength)?
-    # TODO: adjust axis lengths
-    # TODO: make seed_amount a Tree() attribute? is not fixed, height changes...
-    def generate_random_seeds(self, lat_center, long_center, config):
-        """
-        Generate random seeds within the area of an ellipse that is defined by the center point
-
-        Parameters:
-        -
-
-        Returns:
-        - List of tuples with generated points as tuples (latitude, longitude) and species information.
-        """
+    def generate_random_seeds(self, lat_center, long_center, config, distance_meters):
         germinating_seed_amount = config.seed_amount_map[self._height_level]
-        # germination_rate = 0.001  # TODO as constant in config?
-        # germinating_seed_amount = seed_amount * germination_rate
 
-        major_axis, minor_axis = 0.01, 0.005  # in kilometers # TODO make dependent on wind_strength & spreading_factor and change to meters
-
-        center_point = Point(long_center, lat_center)  # Shapely Point uses (longitude, latitude)
-
-        ellipse_bbox = center_point.buffer(1).envelope
         seed_points = []
+        EarthRadius = 6371000.0
 
-        while len(seed_points) < germinating_seed_amount:
-            random_point = Point(
-                random.uniform(ellipse_bbox.bounds[0], ellipse_bbox.bounds[2]),
-                random.uniform(ellipse_bbox.bounds[1], ellipse_bbox.bounds[3])
-            )
+        for seed in range(germinating_seed_amount):
+            # Generate random angle
+            theta = random.uniform(0, 2 * math.pi)
+            # Generate a random radius within the specified circle
+            r = math.sqrt(random.uniform(0, config.default_seeding_radius))
 
-            if ellipse_bbox.contains(random_point):
-                seed_points.append((random_point.y, random_point.x))
+            # Convert polar coordinates to Cartesian coordinates
+            x = r * math.cos(theta)
+            y = r * math.sin(theta)
 
-        return [(seed_point, self._species) for seed_point in seed_points]
+            # Convert Cartesian coordinates to latitude and longitude
+            lat_final = math.degrees(math.asin(math.sin(math.radians(lat_center)) * math.cos(y / EarthRadius) +
+                                               math.cos(math.radians(lat_center)) * math.sin(y / EarthRadius)))
 
+            lon_final = math.degrees(math.radians(long_center) + x / EarthRadius) % 360
 
-        # # Visualize bbox + random points
-        # plt.scatter(*zip(*random_ellipse_points))
-        # plt.plot(*ellipse_bbox.exterior.xy)
-        # plt.xlabel('Longitude')
-        # plt.ylabel('Latitude')
-        # plt.title('Random Points Within Ellipse')
-        # plt.grid(True)
-        # plt.show()
+            # Check if the generated point is within the bounding box
+            if (config.bounding_box[0][0] <= lat_final <= config.bounding_box[1][0] and
+                    config.bounding_box[0][1] <= lon_final <= config.bounding_box[1][1]):
+                seed_points.append(((lat_final, lon_final), self._species))
+
+            # VISUALISE CIRCLE
+            # import matplotlib.pyplot as plt
+            # import numpy as np
+            # fig, ax = plt.subplots(figsize=(10, 8))
+            # bounding_box = config.bounding_box
+            # print(bounding_box)
+            # x = []
+            # y = []
+            # for point in seed_points:
+            #     x.append(point[0][0])
+            #     y.append(point[0][1])
+            # plt.scatter(x, y)
+            # print("Mean x", np.mean(x))
+            # print("Mean y", np.mean(y))
+            # plt.show()
+
+        return seed_points

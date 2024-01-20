@@ -144,7 +144,8 @@ class Population:
 
     def add_tree(self, tree, alive_indice):
         self._trees.append(tree)
-        self._trees_alive.insert(alive_indice, tree)
+        self._trees_alive.append(tree)
+        self._trees_alive = sorted(self._trees_alive, key=lambda t: (t._lat, t._long))
 
     def remove_trees(self, trees):
         for tree in trees:
@@ -174,11 +175,16 @@ class Population:
         i = 0
         trees_to_remove = []
 
+        # TODO add to logs
+        # TODO get strategy from config
+        wind_direction = np.random.uniform(0, 360)
+        wind_strength = np.random.randint(0, 35)
+
         with alive_bar(total=len(self._trees_alive), title=f"Update Trees: [{year}]".format(i),
                        spinner='classic') as bar:  # len(train_loader) = n_batches
             for i, tree in enumerate(self._trees_alive):
                 # Update each tree
-                tree_seeds = tree.update(config)
+                tree_seeds = tree.update(config, wind_direction, wind_strength)
                 forest_seeds = forest_seeds + tree_seeds
 
                 if not tree._alive:
@@ -234,9 +240,15 @@ class Population:
         start_index = bisect.bisect_left(KeyWrapper(self._trees_alive, key=lambda t: (t._lat, t._long)),
                                          (lat_min, long_min))
         start_index = max(0, min(start_index, len(self._trees_alive) - 1))
-        end_index = bisect.bisect_right(KeyWrapper(self._trees_alive, key=lambda t: (t._lat, t._long)),
+        # reverse = self._trees_alive[::-1]
+        end_index = bisect.bisect_left(KeyWrapper(self._trees_alive[::-1], key=lambda t: (t._lat, t._long)),
                                         (lat_max, long_max))
+        end_index = len(self._trees_alive)-end_index
         end_index = max(0, min(end_index, len(self._trees_alive) - 1))
+
+        #TODO remove
+        start_index = 0
+        end_index = len(self._trees_alive)-1
 
         return self._trees_alive[start_index:end_index], start_index, end_index
 
