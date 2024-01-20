@@ -3,7 +3,7 @@ import numpy as np
 import random
 # from src.utils import compute_height_level
 from geographiclib.geodesic import Geodesic
-from shapely.geometry import Point, Polygon
+from shapely.geometry import Point
 
 
 class Tree:
@@ -22,28 +22,18 @@ class Tree:
         return f"Tree(id:{self.id}, position:({self._lat}, {self._long}), group:{self._species}, height:{self._height_level}, age:{self._age})"
 
     def update(self, config):
-        # TODO adapt individual rules here
-
-        # update the age of the tree
+        # Adapt individual rules here
         self._age += 1
-
-        # Update the height level of the tree with the Chapman-Richards growth model
         self._height_level = self.compute_height_level(self._age)
-        # DEPR  self._height_level += self._height_level * 5 / 100
-
-        # Decide if tree dies
         self._alive = self.eval_mortality(self._age)
-        # TODO if surroundings are too crowded
 
         if self._alive:
             # Blow seeds to target
             tree_seeds = self.seeding(self._lat, self._long, (np.random.uniform(-1, 1), np.random.uniform(-1, 1)),
                                       np.random.randint(0, 35), self._spreading_factor, config)
+            # TODO assert seed are valid and pre filter
             return tree_seeds
         return []
-
-
-
 
 
     def seeding(self, start_lat, start_long, wind_direction, wind_strength, spreading_factor, config):
@@ -59,13 +49,12 @@ class Tree:
         # Calculate center of new seeds
         seeding_center = geod.Direct(start_lat, start_long, bearing, distance_meters)
 
-        vienna_bounding_box = [48.12, 16.18, 48.32, 16.58]
-
-        # Check if the position is inside the map boundaries (assuming a square map of vienna)
-        if seeding_center['lat2'] > vienna_bounding_box[0] or seeding_center['lat2'] < vienna_bounding_box[2] or \
-                seeding_center['lon2'] > vienna_bounding_box[1] or seeding_center['lon2'] < vienna_bounding_box[3]:
-            # TOSO
-            return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config)
+        # vienna_bounding_box = [48.12, 16.18, 48.32, 16.58]
+        #
+        # # Check if the position is inside the map boundaries (assuming a square map of vienna)
+        # if seeding_center['lat2'] > vienna_bounding_box[0] or seeding_center['lat2'] < vienna_bounding_box[2] or \
+        #         seeding_center['lon2'] > vienna_bounding_box[1] or seeding_center['lon2'] < vienna_bounding_box[3]:
+        return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config)
 
     def compute_height_level(self, age):
         """
@@ -147,9 +136,9 @@ class Tree:
         Returns:
         - List of tuples with generated points as tuples (latitude, longitude) and species information.
         """
-        seed_amount = config.seed_amount_map[self._height_level]
-        germination_rate = 0.001  # TODO as constant in config?
-        germinating_seed_amount = seed_amount * germination_rate
+        germinating_seed_amount = config.seed_amount_map[self._height_level]
+        # germination_rate = 0.001  # TODO as constant in config?
+        # germinating_seed_amount = seed_amount * germination_rate
 
         major_axis, minor_axis = 0.01, 0.005  # in kilometers # TODO make dependent on wind_strength & spreading_factor and change to meters
 
@@ -158,7 +147,6 @@ class Tree:
         ellipse_bbox = center_point.buffer(1).envelope
         seed_points = []
 
-        # print("genreate seed")
         while len(seed_points) < germinating_seed_amount:
             random_point = Point(
                 random.uniform(ellipse_bbox.bounds[0], ellipse_bbox.bounds[2]),
@@ -168,7 +156,6 @@ class Tree:
             if ellipse_bbox.contains(random_point):
                 seed_points.append((random_point.y, random_point.x))
 
-        # print("seeds OK")
         return [(seed_point, self._species) for seed_point in seed_points]
 
 

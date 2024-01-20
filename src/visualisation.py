@@ -8,18 +8,15 @@ from shapely.geometry import Polygon, MultiPolygon
 
 class Visualisation:
     def __init__(self, config):
-        self.group_color_mapping = None
-        with open(config.data_path + config.species_mapping_file, 'r', encoding='utf-8') as f:
-            self.group_name_mapping = json.load(f)
-        self.group_name_mapping_reversed = {v: k for k, v in self.group_name_mapping.items()}
+        self.species_label_map = config.species_label_map
+        self.species_label_map_reversed = {v: k for k, v in self.species_label_map.items()}
         self.bounding_box = config.bounding_box
         self.show_plot_on_the_fly = config.show_plot_on_the_fly
         self.tree_size_visualization = config.tree_size_visualization
 
     def set_group_color_mapping(self, col):
         unique_values = sorted(list(set(col)))
-        unique_values = [key for key, value in self.group_name_mapping.items() if value in unique_values]
-        # print(f'uniq value ', unique_values)
+        unique_values = [key for key, value in self.species_label_map_reversed.items() if value in unique_values]
         num_unique_values = len(unique_values)
         # Use a colormap with a specific number of colors
         cmap = plt.get_cmap("tab20", num_unique_values)
@@ -38,14 +35,12 @@ class Visualisation:
         warnings.filterwarnings('ignore', message='.*argument looks like a single numeric RGB*.', )
         fig, ax = plt.subplots(figsize=(10, 8))
 
-
         plt.xlim(self.bounding_box[0][1],self.bounding_box[1][1])
         plt.ylim(self.bounding_box[0][0],self.bounding_box[1][0])
 
         x = [x._long for x in pop._trees_alive]
         y = [y._lat for y in pop._trees_alive]
-        groups = [self.group_name_mapping_reversed.get(x._species, str(x._species)) for x in pop._trees_alive]
-
+        groups = [self.species_label_map.get(x._species, str(x._species)) for x in pop._trees_alive]
         colors = self.map_col2color(groups)
 
         plt.scatter(x=x, y=y, color=colors, alpha=0.75,  linewidth=0, s=self.tree_size_visualization)

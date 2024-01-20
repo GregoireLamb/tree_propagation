@@ -41,7 +41,6 @@ def observe_data(df):
 
 
 def run_simulation(population, config, visualize):
-    # TODO add a progress bar
     for year in range(config.simulation_duration):
         visualize.create_visualisation_step(population, year, config.result_path)
         population.update_forest(config, year)

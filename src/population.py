@@ -33,9 +33,12 @@ class Population:
 
     def plot_statistic(self, config):
         # Print and save plots
-        self.plot_population_group_over_time(config.species_label_map, config.result_path,show_plot_on_the_fly=config.show_plot_on_the_fly)
-        self.plot_cumul_group_over_time(config.species_label_map, config.result_path, show_plot_on_the_fly=config.show_plot_on_the_fly)
-        self.plot_proportional_group_over_time(config.species_label_map, config.result_path, show_plot_on_the_fly=config.show_plot_on_the_fly)
+        self.plot_population_group_over_time(config.species_label_map, config.result_path,
+                                             show_plot_on_the_fly=config.show_plot_on_the_fly)
+        self.plot_cumul_group_over_time(config.species_label_map, config.result_path,
+                                        show_plot_on_the_fly=config.show_plot_on_the_fly)
+        self.plot_proportional_group_over_time(config.species_label_map, config.result_path,
+                                               show_plot_on_the_fly=config.show_plot_on_the_fly)
 
         # Save the logs in csv
         with open(config.result_path + 'log.txt', 'w') as file:
@@ -69,7 +72,6 @@ class Population:
         if show_plot_on_the_fly:
             plt.show()
         plt.clf()
-
 
     def plot_cumul_group_over_time(self, species_label_map, save_path, show_plot_on_the_fly):
         fig, ax = plt.subplots(figsize=(10, 6))
@@ -223,7 +225,7 @@ class Population:
             if distance_between_coordinate(tree._lat, tree._long, seed[0][0], seed[0][1]) < radius:
                 return -1
         switch = bisect.bisect_left(KeyWrapper(trees, key=lambda t: (t._lat, t._long)),
-                                         (seed[0][0], seed[0][1]))
+                                    (seed[0][0], seed[0][1]))
         return start_index + switch
 
     def trees_in_the_surroundings(self, lat, long, radius):
@@ -231,9 +233,10 @@ class Population:
         lat_min, long_min, lat_max, long_max = box_around_lat_long(lat, long, radius)
         start_index = bisect.bisect_left(KeyWrapper(self._trees_alive, key=lambda t: (t._lat, t._long)),
                                          (lat_min, long_min))
-        start_index = max(0, min(start_index, len(self._trees_alive)-1))
-        end_index = bisect.bisect_right(KeyWrapper(self._trees_alive, key=lambda t: (t._lat, t._long)),(lat_max, long_max))
-        end_index = max(0, min(end_index, len(self._trees_alive)-1))
+        start_index = max(0, min(start_index, len(self._trees_alive) - 1))
+        end_index = bisect.bisect_right(KeyWrapper(self._trees_alive, key=lambda t: (t._lat, t._long)),
+                                        (lat_max, long_max))
+        end_index = max(0, min(end_index, len(self._trees_alive) - 1))
 
         return self._trees_alive[start_index:end_index], start_index, end_index
 
