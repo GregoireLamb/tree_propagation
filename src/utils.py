@@ -24,8 +24,8 @@ spreading_factor_map = {
 
 
 def import_data(config):
-    #print(config.data_path + config.data_file)
-    #print(config.data_path + config.species_mapping_file)
+    # print(config.data_path + config.data_file)
+    # print(config.data_path + config.species_mapping_file)
     df = pd.read_csv(config.data_path + config.data_file, sep=',', index_col=0)
 
     with open(config.data_path + config.species_mapping_file, 'r', encoding='utf-8') as f:
@@ -46,21 +46,6 @@ def run_simulation(population, config, visualize):
         visualize.create_visualisation_step(population, year, config.result_path)
         population.update_forest(config, year)
     visualize.create_visualisation_step(population, config.simulation_duration, config.result_path)
-
-
-def scale_to_lat_long(unit_vector, lat):
-    """
-    DEPRECATED
-    """
-    # Using estimate that 111,111 meters (111.111 km) in the y direction is 1 degree (of latitude)
-    # and 111,111 * cos(latitude) meters in the x direction is 1 degree (of longitude).
-    # Latitude
-    lat_offset = (1 + unit_vector[0]) / 111111
-
-    # Longitude (East is positive, West is negative)
-    long_offset = (1 + unit_vector[1]) / (111111 * np.cos(lat))
-
-    return np.array([lat_offset, long_offset])
 
 def seed_spread(center_pos, tree_height_level, min_seeding_radius):
     planted_seeds = []
@@ -88,9 +73,8 @@ def distance_between_coordinate(lat1, lon1, lat2, lon2):
     c = 2 * atan2(sqrt(a), sqrt(1 - a))
     return earth_radius * c
 
-def get_spreading_factor_from_species(species:int):
+def get_spreading_factor_from_species(species: int):
     return spreading_factor_map[species]
-    return seed_amount
 
 def box_around_lat_long(original_latitude, original_longitude, meters_difference):
         # Earth radius in meters

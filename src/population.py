@@ -16,7 +16,7 @@ class Population:
     def __init__(self):
         self._trees = []
         self._trees_alive = []
-        self.group_name_mapping = None
+        self.species_label_map = None
 
         self._tree_groups = None
         self._statistic = None
@@ -24,7 +24,7 @@ class Population:
         self._current_tree_id = 168880  # extract max id from initial df
 
     def __repr__(self):
-        stat_to_print = self._statistic.rename(columns=self.group_name_mapping)
+        stat_to_print = self._statistic.rename(columns=self.species_label_map)
         return (f"Population: " +
                 f"\n\t- Started in year {self._starting_year}" +
                 f"\n\t- {len(self._trees)} trees in total" +
@@ -32,32 +32,51 @@ class Population:
                 f"\n\n\t- Population statistic\n{stat_to_print}")
 
     def plot_statistic(self, config):
-        with open(config.data_path + config.species_mapping_file, 'r', encoding='utf-8') as f:
-            group_name_mapping = json.load(f)
-
-        save_path = config.result_path
-        # TODO add proportion plot
-        self.plot_population_group_over_time(group_name_mapping, save_path,
-                                             show_plot_on_the_fly=config.show_plot_on_the_fly)
-        self.plot_cumul_group_over_time(group_name_mapping, save_path, show_plot_on_the_fly=config.show_plot_on_the_fly)
+        # Print and save plots
+        self.plot_population_group_over_time(config.species_label_map, config.result_path,show_plot_on_the_fly=config.show_plot_on_the_fly)
+        self.plot_cumul_group_over_time(config.species_label_map, config.result_path, show_plot_on_the_fly=config.show_plot_on_the_fly)
+        self.plot_proportional_group_over_time(config.species_label_map, config.result_path, show_plot_on_the_fly=config.show_plot_on_the_fly)
 
         # Save the logs in csv
-        with open(save_path + 'log.txt', 'w') as file:
+        with open(config.result_path + 'log.txt', 'w') as file:
             sys.stdout = file  # Redirect standard output to the file
             print(self)
             sys.stdout = sys.__stdout__
 
         # save stat as csv
-        stat_to_print = self._statistic.rename(columns=self.group_name_mapping)
-        stat_to_print.to_csv(save_path + 'Population_evolution.csv', index=False)
+        stat_to_print = self._statistic.rename(columns=self.species_label_map)
+        stat_to_print.to_csv(config.result_path + 'Population_evolution.csv', index=False)
 
-    def plot_cumul_group_over_time(self, group_name_mapping, save_path, show_plot_on_the_fly):
+    def plot_proportional_group_over_time(self, species_label_map, save_path, show_plot_on_the_fly):
         fig, ax = plt.subplots(figsize=(10, 6))
         stat = self._statistic.copy()
         year = stat["year"].values
         stat = stat[self._tree_groups]
-        group_name_mapping = {value: key for key, value in group_name_mapping.items()}
-        stat = stat.rename(columns=group_name_mapping)
+        stat = stat.rename(columns=species_label_map)
+
+        # Calculate proportions
+        stat_proportions = stat.div(stat.sum(axis=1), axis=0)
+
+        ax.stackplot(year, stat_proportions.values.T,
+                     labels=stat_proportions.columns, alpha=0.8)
+        ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Proportion')
+        ax.set_title('Proportion of each species over time')
+
+        plt.tight_layout()  # Ensures the legend fits within the figure
+        plt.savefig(save_path + "Group_proportion_evolution.png")
+        if show_plot_on_the_fly:
+            plt.show()
+        plt.clf()
+
+
+    def plot_cumul_group_over_time(self, species_label_map, save_path, show_plot_on_the_fly):
+        fig, ax = plt.subplots(figsize=(10, 6))
+        stat = self._statistic.copy()
+        year = stat["year"].values
+        stat = stat[self._tree_groups]
+        stat = stat.rename(columns=species_label_map)
         stat = stat.to_dict(orient='list')
         # map stat key to group_name_mapping key
 
@@ -74,14 +93,10 @@ class Population:
             plt.show()
         plt.clf()
 
-    def plot_population_group_over_time(self, group_name_mapping, save_path, show_plot_on_the_fly):
+    def plot_population_group_over_time(self, species_label_map, save_path, show_plot_on_the_fly):
         fig, ax = plt.subplots(figsize=(10, 6))
         for group in self._tree_groups:
-            label = group_name_mapping.get(group, "group")
-            for key, value in group_name_mapping.items():
-                if value == group:
-                    label = key
-            ax.plot(self._statistic['year'], self._statistic[group], label=label)
+            ax.plot(self._statistic['year'], self._statistic[group], label=species_label_map[group])
 
         ax.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
         ax.set_xlabel('Year')
@@ -95,8 +110,7 @@ class Population:
         plt.clf()
 
     def populate(self, df, config):
-        self.group_name_mapping = config.group_name_mapping
-        self.group_name_mapping = {v: k for k, v in self.group_name_mapping.items()}
+        self.species_label_map = config.species_label_map
         initial_forest = self.create_trees(df)
 
         # Assert initial trees are in the simulation environment
@@ -233,7 +247,7 @@ class Population:
                                row[1]["GRUPPE"],
                                row[1]["BAUMHOEHE"],
                                row[1]["ALTERab2023"],
-                               spreading_factor_map[row[1]["GRUPPE"]]))
+                               get_spreading_factor_from_species(row[1]["GRUPPE"])))
         return forest
 
 
