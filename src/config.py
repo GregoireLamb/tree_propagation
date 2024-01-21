@@ -21,6 +21,7 @@ class Config:
         self.data_path = self.__config["data_path"]
         self.data_file = self.__config["data_file"]
         self.result_path = self.__config["result_path"]
+        self.wind_strategy = self.__config["wind_strategy"]
         self.tree_size_visualization = self.__config["tree_size_visualization"]
         self.species_label_mapping_file = self.__config["species_label_mapping_file"]
         self.species_mapping_file = self.__config["species_mapping_file"]
@@ -32,6 +33,9 @@ class Config:
         self.seed_living_space = self.__config["seed_living_space"]
         self.bounding_box = ((self.__config["vienna_bounding_box_lat1"], self.__config["vienna_bounding_box_long1"]),
                              (self.__config["vienna_bounding_box_lat2"],self.__config["vienna_bounding_box_long2"]))
+        if self.wind_strategy == "constant":
+            self.wind_strength = self.__config["wind_strength"]
+            self.wind_direction = self.__config["wind_direction"]
 
         with open(self.data_path + self.seed_amount_file, "r", encoding="utf-8") as f:
             self.seed_amount_map = json.load(f)

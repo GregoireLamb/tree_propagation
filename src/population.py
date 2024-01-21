@@ -20,6 +20,8 @@ class Population:
 
         self._tree_groups = None
         self._statistic = None
+        self._wind_dir_strength = []
+        self._wind_strategy = None
         self._starting_year = 2024
         self._current_tree_id = 168880  # extract max id from initial df
 
@@ -27,9 +29,11 @@ class Population:
         stat_to_print = self._statistic.rename(columns=self.species_label_map)
         return (f"Population: " +
                 f"\n\t- Started in year {self._starting_year}" +
+                f"\n\t- Wind strategy {self._wind_strategy}" +
                 f"\n\t- {len(self._trees)} trees in total" +
                 f"\n\t- {len(self._trees) - len(self._trees_alive)} trees dead" +
-                f"\n\n\t- Population statistic\n{stat_to_print}")
+                f"\n\n\t- Population statistic\n{stat_to_print}" +
+                f"\n\t- Wind values {self._wind_strategy}")
 
     def plot_statistic(self, config):
         # Print and save plots
@@ -112,6 +116,7 @@ class Population:
         plt.clf()
 
     def populate(self, df, config):
+        self._wind_strategy = config.wind_strategy
         self.species_label_map = config.species_label_map
         initial_forest = self.create_trees(df)
 
@@ -154,7 +159,7 @@ class Population:
     def get_trees(self, id):
         return self._trees[id]
 
-    def update_trees_statistics(self):
+    def update_trees_statistics(self, wind_info):
         # count the amount of trees per group self._tree_groups
         trees_per_group = {}
         for group in self._tree_groups:
@@ -166,6 +171,7 @@ class Population:
         new_row.update(trees_per_group)
 
         self._statistic.loc[len(self._statistic)] = new_row
+        self._wind_dir_strength.append(wind_info)
         return trees_per_group
 
     def update_forest(self, config, year):
@@ -175,10 +181,12 @@ class Population:
         i = 0
         trees_to_remove = []
 
-        # TODO add to logs
-        # TODO get strategy from config
-        wind_direction = np.random.uniform(0, 360)
-        wind_strength = np.random.randint(0, 35)
+        if self._wind_strategy == "constant":
+            wind_direction = config.wind_direction
+            wind_strength = config.wind_strength
+        else:
+            wind_direction = np.random.uniform(0, 360)
+            wind_strength = np.random.randint(0, 35)
 
         with alive_bar(total=len(self._trees_alive), title=f"Update Trees: [{year}]".format(i),
                        spinner='classic') as bar:  # len(train_loader) = n_batches
@@ -206,7 +214,7 @@ class Population:
                 planted += 1
                 indice = self.seed_has_enough_space_around(seed,
                                                            radius=config.seed_living_space)  # retun -1 if not enough space, indice for insertion otherwise
-                if indice != -1:  # TODO here adapt radius
+                if indice != -1:
                     # Create new tree on new position
                     self._current_tree_id += 1
                     # print(f'new seed: {seed}')
@@ -222,7 +230,7 @@ class Population:
                     # Add new tree to forest
                     self.add_tree(new_tree, indice)  # TODO insert at right place
                 bar()
-            self.update_trees_statistics()
+            self.update_trees_statistics((wind_direction, wind_strength))
 
     def seed_has_enough_space_around(self, seed, radius):
         trees, start_index, stop_index = self.trees_in_the_surroundings(seed[0][0], seed[0][1], radius)
