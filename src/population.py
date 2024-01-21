@@ -213,9 +213,9 @@ class Population:
                 # Decide if seed becomes tree -> if enough space around
                 random_index = random.randint(0, len(forest_seeds) - 1)
                 seed = forest_seeds.pop(random_index)
+                radius = config.seed_living_space+spreading_factor_map[seed[1]]
                 planted += 1
-                if self.seed_has_enough_space_around(seed,
-                                                           radius=config.seed_living_space):  # retun -1 if not enough space, indice for insertion otherwise
+                if self.seed_has_enough_space_around(seed,radius=config.seed_living_space):  # retun -1 if not enough space, indice for insertion otherwise
                     # Create new tree on new position
                     self._current_tree_id += 1
                     # print(f'new seed: {seed}')

@@ -54,7 +54,7 @@ class Tree:
         #       f"center long {seeding_center['lon2']} \n "
         #       f"bearing : {bearing}, distance_meters : {distance_meters} (wind_strength: {wind_strength} spreading_factor: {spreading_factor}")
 
-        return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config, distance_meters=distance_meters)
+        return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config, radius=config.default_seeding_radius*spreading_factor)
 
     def compute_height_level(self, age):
         """
@@ -123,8 +123,8 @@ class Tree:
 
         return random_number < survival_probability
 
-    def generate_random_seeds(self, lat_center, long_center, config, distance_meters):
-        germinating_seed_amount = config.seed_amount_map[self._height_level]
+    def generate_random_seeds(self, lat_center, long_center, config, radius):
+        germinating_seed_amount = int(config.seed_amount_map[self._height_level] * 0.1)
 
         seed_points = []
         EarthRadius = 6371000.0
@@ -133,7 +133,7 @@ class Tree:
             # Generate random angle
             theta = random.uniform(0, 2 * math.pi)
             # Generate a random radius within the specified circle
-            r = random.uniform(0, config.default_seeding_radius)
+            r = random.uniform(0, radius)
 
             # Convert polar coordinates to Cartesian coordinates
             x = r * math.cos(theta)
