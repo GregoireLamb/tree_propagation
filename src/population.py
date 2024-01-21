@@ -1,5 +1,7 @@
 import sys
 from operator import attrgetter
+from sortedcontainers import SortedKeyList
+
 
 import pandas as pd
 from src.tree import Tree
@@ -15,7 +17,7 @@ from src.utils import *
 class Population:
     def __init__(self):
         self._trees = []
-        self._trees_alive = []
+        self._trees_alive = SortedKeyList([], key=lambda t: (t._lat, t._long))
         self.species_label_map = None
 
         self._tree_groups = None
@@ -126,8 +128,8 @@ class Population:
                     config.bounding_box[0][1] <= tree._long <= config.bounding_box[1][1]):
                 self._trees.append(tree)
 
-        self._trees_alive = self._trees.copy()
-        self._trees_alive = sorted(self._trees_alive, key=attrgetter('_lat', '_long'))
+        self._trees_alive.update(self._trees.copy())
+        # self._trees_alive = sorted(self._trees_alive, key=attrgetter('_lat', '_long'))
         print("Number of Trees Alive:", len(self._trees_alive))
 
         self._tree_groups = list(set([tree._species for tree in self._trees]))
@@ -147,10 +149,10 @@ class Population:
         self._statistic.loc[0] = initial_row
         print(self._statistic)
 
-    def add_tree(self, tree, alive_indice):
+    def add_tree(self, tree):
         self._trees.append(tree)
-        self._trees_alive.append(tree)
-        self._trees_alive = sorted(self._trees_alive, key=lambda t: (t._lat, t._long))
+        self._trees_alive.add(tree)
+        # self._trees_alive = sorted(self._trees_alive, key=lambda t: (t._lat, t._long))
 
     def remove_trees(self, trees):
         for tree in trees:
@@ -200,7 +202,7 @@ class Population:
                 bar()
 
             # remove trees
-            self.remove_trees(trees_to_remove)
+            self.remove_trees(trees_to_remove) # A dead tree can not be replace the year of its death
 
         # Adapt group rules here
         n_seed = len(forest_seeds)
@@ -212,9 +214,8 @@ class Population:
                 random_index = random.randint(0, len(forest_seeds) - 1)
                 seed = forest_seeds.pop(random_index)
                 planted += 1
-                indice = self.seed_has_enough_space_around(seed,
-                                                           radius=config.seed_living_space)  # retun -1 if not enough space, indice for insertion otherwise
-                if indice != -1:
+                if self.seed_has_enough_space_around(seed,
+                                                           radius=config.seed_living_space):  # retun -1 if not enough space, indice for insertion otherwise
                     # Create new tree on new position
                     self._current_tree_id += 1
                     # print(f'new seed: {seed}')
@@ -228,37 +229,40 @@ class Population:
                                     get_spreading_factor_from_species(seed[1]))
 
                     # Add new tree to forest
-                    self.add_tree(new_tree, indice)  # TODO insert at right place
+                    self.add_tree(new_tree)  # TODO insert at right place
                 bar()
             self.update_trees_statistics((wind_direction, wind_strength))
 
     def seed_has_enough_space_around(self, seed, radius):
-        trees, start_index, stop_index = self.trees_in_the_surroundings(seed[0][0], seed[0][1], radius)
+        trees = self.trees_in_the_surroundings(seed[0][0], seed[0][1], radius)
+        # trees, start_index, stop_index = self.trees_in_the_surroundings(seed[0][0], seed[0][1], radius)
         # if len(trees) != 0: print(len(trees))
         for tree in trees:
             if distance_between_coordinate(tree._lat, tree._long, seed[0][0], seed[0][1]) < radius:
-                return -1
-        switch = bisect.bisect_left(KeyWrapper(trees, key=lambda t: (t._lat, t._long)),
-                                    (seed[0][0], seed[0][1]))
-        return start_index + switch
+                return False
+        return True
 
     def trees_in_the_surroundings(self, lat, long, radius):
         # binary search
-        lat_min, long_min, lat_max, long_max = box_around_lat_long(lat, long, radius)
-        start_index = bisect.bisect_left(KeyWrapper(self._trees_alive, key=lambda t: (t._lat, t._long)),
-                                         (lat_min, long_min))
-        start_index = max(0, min(start_index, len(self._trees_alive) - 1))
-        # reverse = self._trees_alive[::-1]
-        end_index = bisect.bisect_left(KeyWrapper(self._trees_alive[::-1], key=lambda t: (t._lat, t._long)),
-                                        (lat_max, long_max))
-        end_index = len(self._trees_alive)-end_index
-        end_index = max(0, min(end_index, len(self._trees_alive) - 1))
+        lat_min, long_min, lat_max, long_max = box_around_lat_long(lat, long, radius) #TODO approximate
+        minT = Tree(-1, lat_min, long_min)
+        maxT = Tree(-11, lat_max, long_max)
+        trees = self._trees_alive.irange_key((lat_min, long_min), (lat_max, long_max))
+        # trees = self._trees_alive.irange_key(minT, maxT)
+        # print("len(trees) ", trees)
+        # start_index = max(0, min(start_index, len(self._trees_alive) - 1))
+        # # reverse = self._trees_alive[::-1]
+        # end_index = bisect.bisect_left(KeyWrapper(self._trees_alive[::-1], key=lambda t: (t._lat, t._long)),
+        #                                 (lat_max, long_max))
+        # end_index = len(self._trees_alive)-end_index
+        # end_index = max(0, min(end_index, len(self._trees_alive) - 1))
+        #
+        # # #TODO remove
+        # # start_index = 0
+        # # end_index = len(self._trees_alive)-1
 
-        #TODO remove
-        start_index = 0
-        end_index = len(self._trees_alive)-1
-
-        return self._trees_alive[start_index:end_index], start_index, end_index
+        return trees
+        # return self._trees_alive[start_index:end_index], start_index, end_index
 
     def create_trees(self, df):
         forest = []

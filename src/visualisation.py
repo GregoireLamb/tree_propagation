@@ -61,9 +61,8 @@ class Visualisation:
         # Add a main title
         plt.suptitle(f"Tree Population {year}", fontsize=20)
 
-        #TODO uncomment
-        # ax.set_xticks([])  # Remove x-axis ticks
-        # ax.set_yticks([])  # Remove y-axis ticks
+        ax.set_xticks([])  # Remove x-axis ticks
+        ax.set_yticks([])  # Remove y-axis ticks
         # ax.spines['top'].set_visible(False)
         # ax.spines['right'].set_visible(False)
         # ax.spines['bottom'].set_visible(False)

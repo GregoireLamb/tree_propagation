@@ -133,7 +133,7 @@ class Tree:
             # Generate random angle
             theta = random.uniform(0, 2 * math.pi)
             # Generate a random radius within the specified circle
-            r = math.sqrt(random.uniform(0, config.default_seeding_radius))
+            r = random.uniform(0, config.default_seeding_radius)
 
             # Convert polar coordinates to Cartesian coordinates
             x = r * math.cos(theta)

@@ -9,3 +9,4 @@ geographiclib
 shapely
 geopy
 alive_progress
+sortedcontainers

@@ -76,22 +76,12 @@ def get_spreading_factor_from_species(species: int):
     return spreading_factor_map[species]
 
 def box_around_lat_long(original_latitude, original_longitude, meters_difference):
-        # Earth radius in meters
-        earth_radius = 6371000.0
-
-        # Convert latitude and longitude to radians
-        # original_latitude_rad = radians(meters_difference)
-        # original_longitude_rad = radians(meters_difference)
-
-        # Calculate the change in latitude and longitude in radians
-        delta_latitude_rad = meters_difference / earth_radius
-        delta_longitude_rad = meters_difference / (earth_radius * cos(original_latitude))
-
-        # Calculate the new coordinates
-        latitude_left = original_latitude - delta_latitude_rad
-        longitude_down = original_longitude - delta_longitude_rad
-
-        latitude_right = original_latitude + delta_latitude_rad
-        longitude_up = original_longitude + delta_longitude_rad
-        return latitude_left, longitude_down, latitude_right, longitude_up
-
+        # Simplified version where 1m = 1/111.11 in lat and 1m = 111.11*cos(lat) in lon
+        diff_lon = 1/(meters_difference * 111.11*math.cos(math.radians(original_latitude)))
+        diff_lat = meters_difference/111.11
+        latitude_down = original_latitude - diff_lat
+        latitude_up = original_latitude + diff_lat
+        longitude_left = original_longitude - diff_lon
+        longitude_right = original_longitude + diff_lon
+        # print(latitude_down, longitude_left, latitude_up, longitude_right)
+        return latitude_down, longitude_left, latitude_up, longitude_right
