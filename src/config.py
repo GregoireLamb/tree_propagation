@@ -7,7 +7,7 @@ from pathlib import Path
 class Config:
     def __init__(self):
         """
-        Initialize Config class. Load config.yaml file and define paths.
+        Initiamlize Config class. Load config.yal file and define paths.
         """
         # Define root directory, one level up from current directory
         self.root = Path(__file__).parent.parent
@@ -22,7 +22,8 @@ class Config:
         self.data_file = self.__config["data_file"]
         self.result_path = self.__config["result_path"]
         self.wind_strategy = self.__config["wind_strategy"]
-        self.tree_size_visualization = self.__config["tree_size_visualization"]
+        self.tree_size_visualization_max = self.__config["tree_size_visualization_max"]
+        self.tree_size_visualization_min = self.__config["tree_size_visualization_min"]
         self.species_label_mapping_file = self.__config["species_label_mapping_file"]
         self.species_mapping_file = self.__config["species_mapping_file"]
         self.species_translation_file = self.__config["species_translation_file"]

@@ -1,13 +1,16 @@
-import math
-import numpy as np
 import random
-from src.utils import *
+
+import numpy as np
 from geographiclib.geodesic import Geodesic
-from shapely.geometry import Point
+
+from src.utils import *
 
 
 class Tree:
-    # rewrite with lower case
+    """
+    Class representing each tree
+    """
+
     def __init__(self, id, lat, long, species=1, height=0, age=0, spreading_factor=1):
         self.id = id
         self._lat = lat
@@ -22,22 +25,29 @@ class Tree:
         return f"Tree(id:{self.id}, position:({self._lat}, {self._long}), group:{self._species}, height:{self._height_level}, age:{self._age})"
 
     def update(self, config, wind_direction, wind_strength):
+        """
+        Main update function for the trees:
+            -   Adapt age, height
+            -   Decide if the tree is alive
+            -   Generate seeds
+        :return: list of seeds
+        """
         # Adapt individual rules here
         self._age += 1
         self._height_level = self.compute_height_level(self._age)
         self._alive = self.eval_mortality(self._age)
 
         if self._alive:
-            # Blow seeds to target
-            tree_seeds = self.seeding(self._lat, self._long,wind_direction, wind_strength , self._spreading_factor, config)
+            tree_seeds = self.seeding(self._lat, self._long, wind_direction, wind_strength, self._spreading_factor,
+                                      config)
             return tree_seeds
         return []
 
-
     def seeding(self, start_lat, start_long, wind_direction, wind_strength, spreading_factor, config):
         """"
-        Strategy: generate seeds from random position in a circle whose center is at wind_strength * spreading_factor from the acctual tree
-        the circle radius if the from the config // could use the spreading factor
+        Generate tree seeds
+        Method: generate seeds from random position in a circle whose center is at wind_strength * spreading_factor from the acctual tree
+        the circle radius is default factor * spreading factor
         """
         # Calculate bearing of the wind in degrees (0 is North)
         bearing = wind_direction
@@ -45,16 +55,11 @@ class Tree:
         # Determine distance vector from input factors
         distance_meters = wind_strength * spreading_factor
 
-        # Set to World Geodetic System 1984 (GPS standard)
         # Calculate center of circle new seeds
         seeding_center = Geodesic.WGS84.Direct(start_lat, start_long, bearing, distance_meters)
 
-        # print(f"tree lat : {start_lat},\n\t long {start_long}, "
-        #       f"\n\t centre lat {seeding_center['lat2']} \n\t"
-        #       f"center long {seeding_center['lon2']} \n "
-        #       f"bearing : {bearing}, distance_meters : {distance_meters} (wind_strength: {wind_strength} spreading_factor: {spreading_factor}")
-
-        return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'], config=config, radius=config.default_seeding_radius*spreading_factor)
+        return self.generate_random_seeds(lat_center=seeding_center['lat2'], long_center=seeding_center['lon2'],
+                                          config=config, radius=config.default_seeding_radius * spreading_factor)
 
     def compute_height_level(self, age):
         """
@@ -124,7 +129,11 @@ class Tree:
         return random_number < survival_probability
 
     def generate_random_seeds(self, lat_center, long_center, config, radius):
-        germinating_seed_amount = int(config.seed_amount_map[self._height_level] * 0.1)
+        """
+        Generate random point within the seeding circle
+        Use polar coordinate for time efficiency
+        """
+        germinating_seed_amount = int(config.seed_amount_map[self._height_level] * 0.1) # Keep propotions
 
         seed_points = []
         EarthRadius = 6371000.0
@@ -149,21 +158,5 @@ class Tree:
             if (config.bounding_box[0][0] <= lat_final <= config.bounding_box[1][0] and
                     config.bounding_box[0][1] <= lon_final <= config.bounding_box[1][1]):
                 seed_points.append(((lat_final, lon_final), self._species))
-
-            # VISUALISE CIRCLE
-            # import matplotlib.pyplot as plt
-            # import numpy as np
-            # fig, ax = plt.subplots(figsize=(10, 8))
-            # bounding_box = config.bounding_box
-            # print(bounding_box)
-            # x = []
-            # y = []
-            # for point in seed_points:
-            #     x.append(point[0][0])
-            #     y.append(point[0][1])
-            # plt.scatter(x, y)
-            # print("Mean x", np.mean(x))
-            # print("Mean y", np.mean(y))
-            # plt.show()
 
         return seed_points

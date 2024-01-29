@@ -1,8 +1,7 @@
-import random
-import sys
 import os
+import sys
+
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# import matplotlib.pyplot as plt
 
 from src.config import Config
 from src.population import *
@@ -10,6 +9,9 @@ from src.visualisation import *
 
 
 def main():
+    """
+    Run a simulation
+    """
     print("\t-- Loading config...\n")
     config = Config()
     random.seed(config.seed)
@@ -28,7 +30,7 @@ def main():
 
     run_simulation(population, config, visualize)
 
-    visualize.make_gif(img_path= config.result_path, output_path=config.result_path+"gif/")
+    visualize.make_gif(img_path=config.result_path, output_path=config.result_path + "gif/")
     population.plot_statistic(config)
     print(population)
 

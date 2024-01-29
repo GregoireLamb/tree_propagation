@@ -1,49 +1,68 @@
 import os
 import warnings
-import matplotlib.pyplot as plt
+
 import geopandas as gpd
 import imageio.v2 as imageio
-import json
+import matplotlib.pyplot as plt
 from shapely.geometry import Polygon, MultiPolygon
 
+
 class Visualisation:
+    """
+    Visualisation class
+    Deals with the maps and Gif
+    """
+
     def __init__(self, config):
         self.species_label_map = config.species_label_map
         self.species_label_map_reversed = {v: k for k, v in self.species_label_map.items()}
         self.bounding_box = config.bounding_box
         self.show_plot_on_the_fly = config.show_plot_on_the_fly
-        self.tree_size_visualization = config.tree_size_visualization
+        self.tree_size_visualization_max = config.tree_size_visualization_max
+        self.tree_size_visualization_min = config.tree_size_visualization_min
 
     def set_group_color_mapping(self, col):
+        """
+        This function assert that each species has the same color over time even if some species
+        disappear during the simulation
+        """
         unique_values = sorted(list(set(col)))
         unique_values = [key for key, value in self.species_label_map_reversed.items() if value in unique_values]
         num_unique_values = len(unique_values)
-        # Use a colormap with a specific number of colors
-        cmap = plt.get_cmap("tab20", num_unique_values)
+        cmap = plt.get_cmap("tab20", num_unique_values) #If only 2 trees use tab10
         # Assign a color to each unique value
         colors = [cmap(i) for i in range(num_unique_values)]
         # Map each original value to its corresponding color
         self.group_color_mapping = {value: color for value, color in zip(unique_values, colors)}
 
-
     def map_col2color(self, col):
+        """
+        Getter function making sur that each species has the same color over representations
+        """
         assigned_colors = [self.group_color_mapping[x] for x in col]
         return assigned_colors
 
-
     def create_tree_map(self, pop, year, save_path=None):
+        """
+        Create and save a map with the trees
+        """
         warnings.filterwarnings('ignore', message='.*argument looks like a single numeric RGB*.', )
         fig, ax = plt.subplots(figsize=(10, 8))
 
-        plt.xlim(self.bounding_box[0][1],self.bounding_box[1][1])
-        plt.ylim(self.bounding_box[0][0],self.bounding_box[1][0])
+        plt.xlim(self.bounding_box[0][1], self.bounding_box[1][1])
+        plt.ylim(self.bounding_box[0][0], self.bounding_box[1][0])
 
         x = [x._long for x in pop._trees_alive]
         y = [y._lat for y in pop._trees_alive]
+        # circle size depends on the tree age
+        ages = [x._age for x in pop._trees_alive]
+        # Scale in 5 steps between 0 and 25 (Max size over 25)
+        scale = [int(self.tree_size_visualization_min + i * (self.tree_size_visualization_max - self.tree_size_visualization_min)/5) for i in range(5)]
+        dot_size = [scale[(x // 5)] for x in ages]
         groups = [self.species_label_map.get(x._species, str(x._species)) for x in pop._trees_alive]
         colors = self.map_col2color(groups)
 
-        plt.scatter(x=x, y=y, color=colors, alpha=0.75,  linewidth=0, s=self.tree_size_visualization)
+        plt.scatter(x=x, y=y, color=colors, alpha=0.75, linewidth=0, s=dot_size)
 
         # add custom legend
         plt.fill([], [], c='lightblue', label='Danube')
@@ -63,12 +82,6 @@ class Visualisation:
 
         ax.set_xticks([])  # Remove x-axis ticks
         ax.set_yticks([])  # Remove y-axis ticks
-        # ax.spines['top'].set_visible(False)
-        # ax.spines['right'].set_visible(False)
-        # ax.spines['bottom'].set_visible(False)
-        # ax.spines['left'].set_visible(False)
-
-        # plt.tight_layout()
 
         if save_path is not None:
             plt.savefig(save_path)
@@ -77,14 +90,20 @@ class Visualisation:
         plt.close()
 
     def draw_vienna(self, file_path='../data/export.geojson'):
+        """
+        Add Vienna boundaries
+        """
         gdf = gpd.read_file(file_path)
         coordinates = gdf.geometry.unary_union.exterior.xy
         plt.plot(coordinates[0], coordinates[1], linewidth=1, color='black', label='Vienna')
 
     def draw_danube(self, dir_path='../data/'):
+        """
+        The danube visualisation
+        """
         for file in os.listdir(dir_path):
             if file.startswith('danube'):
-                gdf = gpd.read_file(dir_path+file)
+                gdf = gpd.read_file(dir_path + file)
                 obj = gdf['geometry'][0]
 
                 if type(obj) == Polygon:
@@ -96,11 +115,17 @@ class Visualisation:
                         plt.fill(x, y, linewidth=2, color='lightblue')
 
     def create_visualisation_step(self, pop, iteration, path='../results/'):
+        """
+        Create a visualisation step and make sur plt will be able to save it
+        """
         if not os.path.isdir(path):
             os.mkdir(path)
-        self.create_tree_map(pop, pop._starting_year+iteration, save_path=path + f"step_{iteration}.png")
+        self.create_tree_map(pop, pop._starting_year + iteration, save_path=path + f"step_{iteration}.png")
 
     def make_gif(self, img_path='../results/', output_path='../results/gif/'):
+        """
+        Generate a gif with all the simulation steps
+        """
         if not os.path.isdir(output_path):
             os.mkdir(output_path)
         images_name = []
@@ -111,7 +136,3 @@ class Visualisation:
         for image_file, order in sorted(images_name, key=lambda x: x[1]):
             images.append(imageio.imread(img_path + image_file))
         imageio.mimsave(output_path + 'simulation.gif', images, fps=2)
-
-if __name__ == '__main__':
-    vis = Visualisation()
-    vis.make_gif()
